@@ -1,0 +1,228 @@
+@import "../_var";
+
+.add-ticket-page {
+    &.wrapper {
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+        color: #fff;
+    }
+
+    .login.btn {
+        transition: all .2s;
+        display: block;
+        position: absolute;
+        right: 20px;
+        top: 20px;
+        color: #fff;
+        font-family: @font;
+        padding: 10px 20px 10px 40px;
+        border-radius: 30px;
+        background-color: rgba(0,0,0,.3);
+        opacity: .6;
+
+        &:hover {
+            opacity: 1;
+        }
+
+        &:before {
+            .pseudo();
+            .sprite(40px, 0px, 17px, 16px);
+            left: 15px;
+            top: 11px;
+        }
+    }
+
+    h1 {
+        font: bold 30px/30px @font;
+        margin: 0 0 6px;
+    }
+
+    h2 {
+        margin: 0 0 40px;
+        font: 13px/30px @font;
+        text-transform: uppercase;
+    }
+
+    .form {
+        width: 560px;
+        margin: 0 0 71px;
+        padding: 22px 40px;
+        background: #fff;
+        color: #000;
+        position: relative;
+
+        form {
+            position: relative;
+        }
+
+        .btn {
+            transition: all .5s ease;
+
+        }
+
+        .success-text {
+            transition: all .4s ease;
+            position: absolute;
+            font-size: 16px;
+            width: 100%;
+            bottom: 200px;
+            left: 0;
+            text-align: center;
+            font-weight: 300;
+
+            opacity: 0;
+            transform: translate(0, 20px);
+        }
+
+        form.success {
+            .success-text {
+                transition: all .4s ease .4s;
+                opacity: 1;
+                transform: translate(0, 0);
+            }
+            .row {
+                transition: all .3s ease;
+                opacity: 0;
+            }
+            .file-label {
+                transition: all 0s ease;
+                opacity: 0;
+                visibility: hidden;
+            }
+            .row-submit {
+                transform: translate(207px,-280px);
+
+                &:before,
+                &:after {
+                    transition: all .3s ease .3s;
+                    opacity: 1;
+                }
+
+                &:after {
+                    transform: rotate(40deg);
+                }
+                &:before {
+                    transform: rotate(-50deg);
+                }
+            }
+
+            .btn {
+                .size(150px, 150px);
+                box-shadow: 0 0 5px 2px rgba(56, 150, 255, 0);
+                //transition: all .5s ease;
+                padding: 0;
+                border-radius: 50%;
+                background: none;
+                color: #fff;
+                font-size: 0;
+            }
+        }
+
+        .added-file {
+            transition: all, .2s;
+            color: #777;
+            line-height: 24px;
+            cursor: pointer;
+            opacity: .6;
+
+            &:hover {
+                opacity: 1;
+            }
+        }
+
+        &.login {
+            width: 360px;
+        }
+
+        .row {
+            .clearfix();
+            transition: all .3s ease .3s;
+            margin: 0 0 10px;
+        }
+
+        .row-submit {
+            .clearfix();
+            position: relative;
+            transition: all .4s;
+            margin: 30px 0 8px;
+
+            .btn {
+                transition: all .7s;
+                //left: 0;
+                //top: 0;
+            }
+
+            &:before,
+            &:after {
+                .pseudo();
+                .size(70px, 1px);
+                transition: all .3s ease;
+                opacity: 0;
+                transform: translate(0, 20px);
+                background-color: #3896ff;
+            }
+
+            .file-label {
+                transition: all .3s ease .5s;
+            }
+
+            &:after {
+                width: 45px;
+                top: 88px;
+                left: 31px;
+                transform: rotate(40deg);
+            }
+
+            &:before {
+                top: 75px;
+                left: 58px;
+                transform: rotate(-50deg);
+            }
+        }
+
+        .col {
+            width: 270px;
+            float: left;
+
+            + .col {
+                margin-left: 20px;
+            }
+        }
+
+        .file-label {
+            float: right;
+        }
+
+        textarea {
+            height: 120px;
+        }
+    }
+
+    .documents {
+        font-size: 0;
+
+        .doc {
+            position: relative;
+            display: inline-block;
+            width: 193px;
+            margin-right: 20px;
+            padding-top: 39px;
+            vertical-align: top;
+
+            text-decoration: none;
+            font: 14px/22px @font;
+            color: #9d9d9d;
+
+            &:before {
+                .pseudo();
+                .sprite-icon-30(2, 21px, 26px);
+                top: 0;
+            }
+
+            &:hover {
+                color: #fff;
+            }
+        }
+    }
+}

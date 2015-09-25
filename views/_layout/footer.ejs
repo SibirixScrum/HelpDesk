@@ -1,0 +1,17 @@
+<!-- libs and plugins -->
+<script>
+    var APP = {
+        user: <%- JSON.stringify(user) %>,
+        projects: <%- JSON.stringify(projects) %>,
+        countTickets: <%- JSON.stringify(countTickets) %>,
+        port: <%- global.config.port %>,
+        markDateRed: <%- global.config.markDateRed ? global.config.markDateRed : false %>
+    };
+</script>
+
+<script src="//tinymce.cachefly.net/4.2/tinymce.min.js"></script>
+<script src="/socket.io/socket.io.js"></script>
+<script src="/js/bundle.js"></script>
+
+</body>
+</html>

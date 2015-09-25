@@ -1,0 +1,64 @@
+/**
+ * Переменные
+ **/
+
+@path-images: '../images/';
+@path-base64-images: '../images/base64/';
+
+@font: 'Roboto', sans-serif;;
+
+/****
+ * Миксины, разное
+ ****/
+.size(@width, @height: @width) {
+    width:  @width;
+    height: @height;
+}
+
+.pseudo() {
+    content: '';
+    position: absolute;
+}
+
+.sprite (@left, @top, @width, @height: @width) {
+    .size(@width, @height);
+    background: url('@{path-images}sprite.png') (-1 * @left) (-1 * @top) no-repeat;
+}
+
+@sprite-icons-20-top: 0;
+.sprite-icon-20 (@num, @width, @height: @width) {
+    .size(@width, @height);
+    background: url('@{path-images}sprite.png') (-20px * @num) @sprite-icons-20-top no-repeat;
+}
+
+@sprite-icons-30-top: -30px;
+.sprite-icon-30 (@num, @width, @height: @width) {
+    .size(@width, @height);
+    background: url('@{path-images}sprite.png') (-30px * @num) @sprite-icons-30-top no-repeat;
+}
+
+.hover-opacity(@opacity: 0.75) {
+    cursor: pointer;
+
+    &:hover {
+        opacity: @opacity;
+    }
+}
+
+.rotate(@degree) {
+    transform: rotate(@degree);
+}
+
+// helpers
+.clearfix() {
+    &:before,
+    &:after {
+        content: "";
+        display: table;
+    }
+
+    &:after {
+        clear: both;
+    }
+}
+

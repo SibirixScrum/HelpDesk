@@ -205,7 +205,7 @@ exports.resetPassword = function(email, hash, cb) {
 
                 var to = email;
                 var subject = 'Helpdesk ваш пароль был изменен';
-                var text = 'Добрый день. </br>\n Ваш пароль был успешно изменен. Новый пароль &mdash; ' + pass + '.';
+                var text = 'Добрый день. </br>\n Ваш пароль был успешно изменен. Новый пароль &mdash; ' + pass;
 
                 mailModel.sendMail(to, subject, text, true, project);
 

@@ -13,6 +13,23 @@ function logoutSuccess() {
     }
 }
 
+function showModal(data) {
+    return dispatch => {
+        dispatch({
+            type: ActionTypes.SHOW_MODAL,
+            content: {header: data.header, text: data.text}
+        });
+    }
+}
+
+function hideModal(data) {
+    return dispatch => {
+        dispatch({
+            type: ActionTypes.HIDE_MODAL
+        });
+    }
+}
+
 function updateCounters(ticket, isNew = false) {
     return {
         type: ActionTypes.UPDATE_COUNTERS,
@@ -36,6 +53,8 @@ function loginSuccess(data) {
 
 module.exports = {
     loginSuccess,
+    showModal,
+    hideModal,
     logoutSuccess,
     updateCounters
 };

@@ -9,6 +9,7 @@ var projectModel = require('./project');
 var mailModel = require('./mail');
 var userModel = require('./user');
 var autoIncrement = require('mongoose-auto-increment');
+var fileModel = require('./file');
 
 autoIncrement.initialize(global.mongooseConnection);
 
@@ -17,12 +18,13 @@ var ticketSchema = new mongoose.Schema({
     lastDate: Date,     // Дата последнего сообщения в тикете
     title:    String,   // Заголовок
     project:  String,   // Код проекта (project.code)
+    autoCounter: Number, // Номер тикета
     number:   Number,   // Номер тикета
     author:   String,   // привязка к пользователю - по емейлу
     messages: [messageModel.scheme]  // Массив сообщений в тикете
 });
 
-ticketSchema.plugin(autoIncrement.plugin, { model: collectionName, field: 'number' });
+ticketSchema.plugin(autoIncrement.plugin, { model: collectionName, field: 'autoCounter' });
 
 var pageSize = global.config.get('tickets.page.limit', 1000);
 exports.scheme = ticketSchema;
@@ -66,21 +68,39 @@ exports.addMessageFromMail = function(project, number, mailObject) {
 
         var ticket = res[0];
         var author = mailObject.from[0];
-        var text = mailObject.text;
+        var text = mailObject.html;
+
+        if (text) {
+            text = text.replace(/<base[^>]*>/ig, '');
+        } else {
+            text = mailObject.text.replace(/\r?\n/g, '<br>');
+        }
 
         if (author.address != ticket.author && author.address != project.responsible) {
-            text += '\n\n-- Отправлено с ' + author.address + ' <' + author.name + '>';
+            //text += '\n\n-- Отправлено с ' + author.address + ' <' + author.name + '>';
+            return false;
+        }
+
+        if (!ticket.opened) {
+            return false;
         }
 
         var messageObj = new messageModel.model({
             date: mailObject.date,
             author: author.address,
-            text: text
-            // todo: attachments: mailObject.attachments
+            text: text,
+            files: fileModel.proceedMailAttachments(project.code + '-' + ticket.number, mailObject.attachments)
         });
+
+        if (mailObject.attachments && mailObject.attachments.length != messageObj.files.length) {
+            messageObj.text += '<br><br>Внимание! Некоторые файлы не прошли валидацию и не будут отображены в сообщении.';
+        }
 
         ticket.messages.push(messageObj);
         ticket.save();
+
+        sendMailOnMessageAdd(project, ticket, messageObj, mailObject.attachments && mailObject.attachments.length != messageObj.files.length);
+
         // Отправить ПУШ-оповещение
         self.prepareTicketsForClient([ticket], function(err, data) {
             var ticket = data[0];
@@ -142,7 +162,7 @@ exports.getProjectTickets = function(projectCodes, offset, sort, callback) {
 exports.findTicket = function(projectCode, number, callback) {
     this.model.find({ project: projectCode, number: number }, function(err, res) {
         if (err) { callback && callback(err); return; }
-        callback && callback(null, res[0]);
+        callback && callback(null, res ? res[0] : false);
     });
 };
 
@@ -153,9 +173,9 @@ exports.findTicket = function(projectCode, number, callback) {
  */
 exports.getSort = function(textSort) {
     if (textSort == 'date asc') {
-        return { lastDate: -1 };
+        return { opened: -1, lastDate: -1 };
     } else if (textSort == 'date desc') {
-        return { lastDate: 1 };
+        return { opened: -1, lastDate: 1 };
     } else if (textSort == 'opened asc') {
         return { opened: 1, lastDate: -1 };
     } else if (textSort == 'opened desc') {
@@ -168,6 +188,8 @@ exports.getSort = function(textSort) {
 exports.sendMailOnTicketAdd = sendMailOnTicketAdd;
 exports.sendMailOnTicketAddUserCreate = sendMailOnTicketAddUserCreate;
 exports.sendMailOnMessageAdd = sendMailOnMessageAdd;
+exports.sendMailOnTicketClose = sendMailOnTicketClose;
+exports.sendMailOnTicketOpen = sendMailOnTicketOpen;
 
 /**
  *
@@ -175,19 +197,59 @@ exports.sendMailOnMessageAdd = sendMailOnMessageAdd;
  * @param ticket
  */
 function sendMailOnTicketAdd(project, ticket) {
+    var ticketNumber = project.code + '-' + ticket.number;
+
+    var to = project.responsible;
+    var subject = 'Helpdesk создан новый тикет: "' + ticket.title + '" [#' + ticketNumber + ']';
+    var text = '<p>Сообщение:</p><br>\n<br>\n';
+    text += ticket.messages[0].text;
+    mailModel.sendMail(to, subject, text, true, project, ticket.messages[0].getFilesForMail());
+
+    to = ticket.author;
+    subject = 'Helpdesk: тикет "' + ticket.title + '"  [#' + ticketNumber + ']';
+    text = 'Добрый день. Вы подавали обращение в систему поддержки проекта ' + project.name + '.<br>\n';
+    text += 'Вы можете отслеживать статус вашего обращения из <a href="http://' + project.domain + '/tickets/' + ticketNumber + '?login=' + encodeURIComponent(to) + '">личного кабинета</a>, либо общаясь в этой цепочке писем (пожалуйста, не удаляйте номер тикета из темы письма при переписке).';
+    mailModel.sendMail(to, subject, text, true, project);
+}
+
+/**
+ *
+ * @param project
+ * @param ticket
+ */
+function sendMailOnTicketClose(project, ticket) {
     var ticketNumber = this.compileTicketNumber(project, ticket.number);
 
     var to = project.responsible;
-    var subject = '<p>Helpdesk создан новый тикет: <b>[#' + ticketNumber + ']</b></p>';
-    var text = '<p>Сообщение:</p>\n\n';
-    text += ticket.messages[0].text;
-    mailModel.sendMail(to, subject, text, true);
+    var subject = 'Helpdesk тикет "' + ticket.title + '" закрыт: [#' + ticketNumber + ']';
+    var text = 'Тикет "' + ticket.title + '" закрыт.';
+    mailModel.sendMail(to, subject, text, true, project);
 
     to = ticket.author;
-    subject = 'Helpdesk: тикет [#' + ticketNumber + ']';
-    text = 'Добрый день. Вы подавали обращение в систему поддержки проекта ' + project.name + '.<br>\n';
-    text += 'Вы можете отслеживать статус вашего обращения из <a href="http://' + project.domain + '">личного кабинета</a>, либо общаясь в этой цепочке писем (пожалуйста, не удаляйте номер тикета из переписки).';
-    mailModel.sendMail(to, subject, text, true);
+    subject = 'Helpdesk: тикет "' + ticket.title + '" закрыт [#' + ticketNumber + ']';
+    text = 'Добрый день. Ваше обращение в систему поддержки проекта ' + project.name + ' было закрыто.<br>\n';
+    text += 'Вы можете переоткрыть ваше обращение из <a href="http://' + project.domain + '/tickets/' + ticketNumber + '?login=' + encodeURIComponent(to) + '">личного кабинета</a>.';
+    mailModel.sendMail(to, subject, text, true, project);
+}
+
+/**
+ *
+ * @param project
+ * @param ticket
+ */
+function sendMailOnTicketOpen(project, ticket) {
+    var ticketNumber = this.compileTicketNumber(project, ticket.number);
+
+    var to = project.responsible;
+    var subject = 'Helpdesk тикет "' + ticket.title + '" переоткрыт: [#' + ticketNumber + ']';
+    var text = 'Тикет "' + ticket.title + '" переоткрыт.';
+    mailModel.sendMail(to, subject, text, true, project);
+
+    to = ticket.author;
+    subject = 'Helpdesk: тикет "' + ticket.title + '" переоткрыт [#' + ticketNumber + ']';
+    text = 'Добрый день. Ваше обращение в систему поддержки проекта ' + project.name + ' было переоткрыто.<br>\n';
+    text += 'Вы можете отслеживать статус вашего обращения из <a href="http://' + project.domain + '/tickets/' + ticketNumber + '?login=' + encodeURIComponent(to) + '">личного кабинета</a>, либо общаясь в этой цепочке писем (пожалуйста, не удаляйте номер тикета из темы письма при переписке).';
+    mailModel.sendMail(to, subject, text, true, project);
 }
 
 /**
@@ -197,21 +259,21 @@ function sendMailOnTicketAdd(project, ticket) {
  * @param pass
  */
 function sendMailOnTicketAddUserCreate(project, ticket, pass) {
-    var ticketNumber = this.compileTicketNumber(project, ticket.number);
+    var ticketNumber = project.code + '-' + ticket.number;
 
     var to = project.responsible;
-    var subject = '<p>Helpdesk создан новый тикет: <b>[#' + ticketNumber + ']</b></p>';
+    var subject = 'Helpdesk создан новый тикет: "' + ticket.title + '" [#' + ticketNumber + ']';
     var text = '<p>Сообщение:</p>\n\n';
     text += ticket.messages[0].text;
-    mailModel.sendMail(to, subject, text, true);
+    mailModel.sendMail(to, subject, text, true, project, ticket.messages[0].getFilesForMail());
 
     to = ticket.author;
-    subject = 'Helpdesk: тикет [#' + ticketNumber + ']';
+    subject = 'Helpdesk: тикет "' + ticket.title + '"  [#' + ticketNumber + ']';
     text = 'Добрый день. Вы подавали обращение в систему поддержки проекта ' + project.name + '.<br>\n';
-    text += 'Вы можете отслеживать статус вашего обращения из <a href="http://' + project.domain + '">личного кабинета</a>, либо общаясь в этой цепочке писем (пожалуйста, не удаляйте номер тикета из переписки).\n';
+    text += 'Вы можете отслеживать статус вашего обращения из <a href="http://' + project.domain + '/tickets/' + ticketNumber + '?login=' + encodeURIComponent(to) + '">личного кабинета</a>, либо общаясь в этой цепочке писем (пожалуйста, не удаляйте номер тикета из темы письма при переписке).\n';
     text += 'Логин для доступа: ' + ticket.author + '\n';
     text += 'Пароль: ' + pass + '\n';
-    mailModel.sendMail(to, subject, text, true);
+    mailModel.sendMail(to, subject, text, true, project);
 }
 
 /**
@@ -220,14 +282,15 @@ function sendMailOnTicketAddUserCreate(project, ticket, pass) {
  * @param ticket
  * @param message
  */
-function sendMailOnMessageAdd(project, ticket, message) {
+function sendMailOnMessageAdd(project, ticket, message, filesSkiped) {
     var ticketNumber = exports.compileTicketNumber(project, ticket.number);
 
     var to = project.responsible == message.author ? ticket.author : project.responsible;
-    var subject = 'Helpdesk тикет [#' + ticketNumber + ']: новое сообщение';
-    var text = 'Новое сообщение в тикете:\n\n';
+    var subject = 'Helpdesk тикет "' + ticket.title + '"  [#' + ticketNumber + ']: новое сообщение';
+    var text = 'Новое сообщение в тикете:<br>\n<br>\n';
     text += message.text;
-    mailModel.sendMail(to, subject, text, true);
+
+    mailModel.sendMail(to, subject, text, true, project, message.getFilesForMail());
 }
 
 /**
@@ -279,6 +342,8 @@ exports.prepareTicketsForClient = function(ticketList, callback) {
                         email: message.author,
                         name:  userNames[message.author]
                     };
+                    var lastMessage = ticket.messages[ticket.messages.length - 1];
+                    ticket.isLastSupport = ticket.author.email !== lastMessage.author.email;
                     ticket.messages[j] = message;
                 }
                 ticketList[i] = ticket;

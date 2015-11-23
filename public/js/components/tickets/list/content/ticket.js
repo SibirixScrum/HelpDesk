@@ -5,7 +5,8 @@ require('moment/locale/ru');
 moment.locale('ru');
 
 const Ticket = React.createClass({
-    onClickHandler() {
+    onClickHandler(e) {
+        e.stopPropagation();
         this.props.openDetail({
             project: this.props.ticket.project,
             number: this.props.ticket.number
@@ -30,8 +31,6 @@ const Ticket = React.createClass({
             return false;
         }
 
-        var lastMessage = ticket.messages[ticket.messages.length - 1];
-        var isLastSupport = ticket.author.email !== lastMessage.author.email;
         var uid = ticket.project + '-' + ticket.number;
 
         // Дата последнего сообщения
@@ -41,7 +40,7 @@ const Ticket = React.createClass({
 
         // Add classes
         var className = !ticket.opened ? 'closed ' : '';
-        className += isLastSupport ? 'last-support ' : '';
+        className += ticket.isLastSupport ? 'last-support ' : '';
         className += this.props.curOpen && (this.props.curOpen.project === ticket.project) && (this.props.curOpen.number === ticket.number) ? 'active ' : '';
 
         return (

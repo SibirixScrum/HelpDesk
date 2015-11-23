@@ -2,7 +2,7 @@
 var bodyParser   = require('body-parser');
 var cookieParser = require('cookie-parser');
 var express      = require('express');
-var favicon      = require('static-favicon');
+var favicon      = require('serve-favicon');
 var http         = require('http');
 var https        = require('https');
 var logger       = require('morgan');
@@ -68,7 +68,7 @@ models.setCallback(function() {
         saveUninitialized: true
     }));
 
-    app.use(favicon());
+    app.use(favicon(__dirname + '/public/favicon.ico'));
     app.use(logger('dev'));
     app.use(bodyParser.json({ limit: '10mb' }));
     app.use(bodyParser.urlencoded());
@@ -95,7 +95,7 @@ models.setCallback(function() {
         app.use(function(err, req, res, next) {
             res.status(err.status || 500);
 
-            if (req.headers['x-requested-with'] && (req.headers['x-requested-with'].toLowerCase() == 'xmlhttprequest')) {
+            if (req.headers['accept'] == 'application/json' || req.headers['x-requested-with'] && (req.headers['x-requested-with'].toLowerCase() == 'xmlhttprequest')) {
                 res.end(JSON.stringify({result: false, message: err.message, error: err}));
             } else {
                 res.render('error', {

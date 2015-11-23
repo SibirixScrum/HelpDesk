@@ -1,6 +1,6 @@
 'use strict';
 const { VisibilityFilters, SET_STATE } = require('../actions');
-    const ActionTypes = require('../constants/action-types');
+const ActionTypes = require('../constants/action-types');
 const {combineReducers} = require('redux');
 
 const tickets = require('./tickets');

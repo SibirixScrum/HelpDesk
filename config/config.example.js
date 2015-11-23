@@ -8,18 +8,16 @@ exports.tmpDir = exports.appRoot + 'temp/'; // Uploaded files temp folder
  * Database, mongodb
  */
 exports.db = {
-    connectString: 'mongodb://localhost/helpdesk',
-    host:   'localhost',
-    dbname: 'helpdesk'
+    connectString: 'mongodb://localhost/helpdesk'
 };
 
 /**
  * SocketIO auth timeouts
  */
 exports.socketIo = {
-    expire: 60 * 5, // in seconds
-    timeout: 15000, // in milliseconds
-    secret: ''      // todo Fill secret key
+    expire: 60 * 5,        // in seconds
+    timeout: 15000,        // in milliseconds
+    secret: 'SECRET'       // todo Fill secret key
 };
 
 /**
@@ -27,20 +25,7 @@ exports.socketIo = {
  */
 exports.session = {
     maxAge: 30 * 60 * 1000, // in seconds
-    secret: ''              // todo Fill secret key
-};
-
-/**
- * Mail parsing uses IMAP protocol
-  */
-exports.email = {
-    login: "",     // todo Fill email login
-    password: "",  // todo Fill email password
-    host: 'imap.gmail.com',
-    port: 993,
-    tls: true,
-    sign: 'Helpdesk',
-    checkInterval: 30 // in seconds
+    secret: 'SECRET'        // todo Fill secret key
 };
 
 /**
@@ -48,17 +33,28 @@ exports.email = {
  */
 exports.projects = [
     {
-        code:    'SCRUMBAN',                  // Project code
-        domain:  'scrumban.helpdesk:3000',    // Project domain (each project should have it's own domain)
-        name:    'Scrumban',                  // Project name
-        title:   'ЦЕНТР ПОДДЕРЖКИ',           // Title for form
-        letters: 'SB',                        // Short project code, used in ticket numbers
-        color:   '#3896ff',                   // Project color for list
-        responsible: 'tester@example.com',    // Email of responsible. Auto-creates user account with this email and sends password to it
+        code:    'HELPDESK',                  // Project code
+        domain:  'localhost:3000',            // Project domain (each project should have it's own domain)
+        name:    'Helpdesk',                  // Project name
+        title:   'This is a test',            // Title for form
+        letters: 'HD',                        // Short project code, used in ticket numbers
+        responsible: 'example@example.com',   // Email of responsible. Auto-creates user account with this email and sends password to it
+        email: { // Mail parsing service
+            login: "",     // todo Fill email login
+            password: "",  // todo Fill email password
+            host: 'imap.gmail.com',
+            port: 993,
+            tls: true,
+            sign: 'Helpdesk',
+            checkInterval: 30, // in seconds
+            smtpHost: 'smtp.gmail.com',
+            smtpPort: 465,
+            smtpSecure: true
+        },
         files: [                              // Array of files for project, use for documentation
             /*{
                 name: 'Displayed text',
-                path: '/docs/scrumban-b24-handbook.pdf' // File path, relative to www/public/
+                path: '/docs/manual.pdf' // File path, relative to www/public/
             }, {
                 name: '',
                 path: ''
@@ -69,6 +65,12 @@ exports.projects = [
         code: 'PROJECT2',
         ...
     }*/
+];
+
+exports.projectColors = [
+    'ff0036', 'ffae00', 'ffe400', '96ff00', '00a2ff', '005aff', '8400ff',
+    'ff0078', 'ff9600', 'f6ff00', 'ccf801', '00ccff', '065cec', 'a800ff',
+    'ff00c6', 'ff7e00', 'd2ff00', 'e3eb00', '00eaff', '0957d9', 'b716fa'
 ];
 
 // Time to mark tickets with red color
@@ -83,7 +85,10 @@ exports.files = {
 };
 
 exports.tickets = {
+    editor: {
+        allowedTags: "<p><span><b><strong><i><em><br><h1><h2><h3><h4><h5><h6><ul><ol><li><s><sub><sup><code>"
+    },
     page: {
-        limit: 1000 // Load in one page
+        limit: 100 // Load tickets in one page
     }
 };

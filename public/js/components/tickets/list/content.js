@@ -37,7 +37,7 @@ const TicketsListContent = React.createClass({
         });
 
         return (
-            <div className="tickets-list" ref="ticketsContainer">
+            <div onClick={this.props.closeDetail} className="tickets-list" ref="ticketsContainer">
                 <div id="tickets-wrapper">
                     {tickets}
                 </div>

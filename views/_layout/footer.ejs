@@ -4,6 +4,9 @@
         user: <%- JSON.stringify(user) %>,
         projects: <%- JSON.stringify(projects) %>,
         countTickets: <%- JSON.stringify(countTickets) %>,
+        passChanged: <%-passChanged ? passChanged : false%>,
+        files: <%- JSON.stringify(global.config.files) %>,
+        allowedTags: <%- JSON.stringify(global.config.tickets.editor.allowedTags.replace(/<(\w*)>/g, "$1,")) %>,
         port: <%- global.config.port %>,
         markDateRed: <%- global.config.markDateRed ? global.config.markDateRed : false %>
     };

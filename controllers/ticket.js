@@ -1,5 +1,7 @@
 var express = require('express');
+var striptags = require('striptags');
 var multer = require('multer');
+var jsonwebtoken = require('jsonwebtoken');
 var fs = require('fs');
 var router = express.Router();
 
@@ -15,7 +17,7 @@ var userModel = models.user;
  */
 router.get('/list', function(req, res) {
     if (!req.session.user) {
-        res.end(JSON.stringify({ result: true, list: [] }));
+        res.json({ result: true, list: [] });
         return;
     }
 
@@ -23,7 +25,7 @@ router.get('/list', function(req, res) {
     var offset = req.query.offset ? req.query.offset : 0;
     var sort = req.query.sort ? req.query.sort : 'date asc';
     var state = req.query.state ? req.query.state : 'SHOW_ALL';
-    var projectsFilter = (req.query.projects !== undefined) ? req.query.projects : false;
+    var projectsFilter = (req.query.projects !== undefined) ? req.query.projects.split(',') : false;
 
     var projectList = projectModel.getResponsibleProjectsList(userEmail);
 
@@ -50,14 +52,53 @@ router.get('/list', function(req, res) {
 
     function resultCallback(err, data) {
         if (err) {
-            res.end(JSON.stringify({result: false, error: 'some error'}));
+            res.json({result: false, error: 'some error'});
             return;
         }
 
         ticketModel.prepareTicketsForClient(data, function(err, data) {
-            res.end(JSON.stringify({ result: true, list: data }));
+            for (var i = 0; i < data.length; i++) {
+                data[i].messages = [];
+            }
+            res.json({ result: true, list: data });
         });
     }
+});
+
+/**
+ * Детальная информация по тикету
+ */
+router.get('/detail/:projectCode/:number', function(req, res) {
+    var projectCode = req.params.projectCode;
+    var number = parseInt(req.params.number, 10);
+
+    if (!projectCode || !number) {
+        res.json({ result: false, error: 'no params' });
+        return;
+    }
+
+    if (!req.session.user) {
+        res.json({ result: false, error: 'no auth' });
+        return;
+    }
+
+    ticketModel.findTicket(projectCode, number, function(err, ticket) {
+        if (err || !ticket) {
+            res.json({result: false, error: 'no ticket'});
+            return;
+        }
+
+        if (!ticketModel.hasRightToWrite(ticket, req.session.user)) {
+            res.json({ result: false, error: 'no rights' });
+            return;
+        }
+
+        // Отправить ПУШ-оповещение
+        ticketModel.prepareTicketsForClient([ticket], function(err, data) {
+            var ticket = data[0];
+            res.json({ result: true, ticket: ticket });
+        });
+    });
 });
 
 /**
@@ -69,6 +110,7 @@ var cpUpload = upload.fields([{ name: 'files[]', maxCount: global.config.files.m
 
 router.post('/add', cpUpload, function (req, res) {
     var project, projectCode = req.body.projectCode;
+    if (!req.files) req.files = {};
 
     if (projectCode) {
         project = projectModel.getProjectByCode(projectCode);
@@ -80,23 +122,23 @@ router.post('/add', cpUpload, function (req, res) {
 
     if (!project) {
         fileModel.cleanupFiles(req.files['files[]']);
-        res.end(JSON.stringify({
+        res.json({
             result: false,
             error: 'Неизвестный домен'
-        }));
+        });
         return;
     }
 
     var email = req.body.email ? req.body.email.trim() : false;
     var name  = req.body.name  ? req.body.name.trim()  : false;
     var title = req.body.title ? req.body.title.trim() : false;
-    var text  = req.body.text  ? req.body.text.trim()  : false;
+    var text  = req.body.text  ? req.body.text.trim()  : '';
+    text = striptags(text, global.config.tickets.editor.allowedTags);
 
     // todo нормальная валидация
-
     if (!email || !name || !title || !text) {
         fileModel.cleanupFiles(req.files['files[]']);
-        res.end(JSON.stringify({ result: false, error: 'no data' }));
+        res.json({ result: false, error: 'no data' });
         return;
     }
 
@@ -111,9 +153,11 @@ router.post('/add', cpUpload, function (req, res) {
 
     ticket.save(function(err, ticket) {
         if (err) {
-            res.end(JSON.stringify({ result: false, error: 'save ticket error' }));
+            res.json({ result: false, error: 'save ticket error', errorOjbect: err });
             return;
         }
+
+        ticket.number = projectModel.getBigUniqueNumber(ticket.autoCounter);
 
         // Загрузка файлов
         var files = fileModel.proceedUploads(project.code + '-' + ticket.number, req.files, 'files[]');
@@ -138,19 +182,46 @@ router.post('/add', cpUpload, function (req, res) {
             } else {
                 ticketModel.sendMailOnTicketAdd(project, ticket);
             }
-        });
 
-        // Отправить ПУШ-оповещение
-        ticketModel.prepareTicketsForClient([ticket], function(err, data) {
-            var ticket = data[0];
-            global.io.to(project.code).emit('newTicket', { ticket: ticket });
-            global.io.to(email       ).emit('newTicket', { ticket: ticket });
-        });
+            var result = {
+                project: project.code,
+                number: ticket.number
+            };
 
-        res.end(JSON.stringify({
-            project: project.code,
-            number: ticket.number
-        }));
+            if (pass) {
+                var token = jsonwebtoken.sign(email, global.config.socketIo.secret, { expiresInMinutes: global.config.socketIo.expire });
+
+                req.session.user = {
+                    email: email,
+                    name:  user.name,
+                    token: token
+                };
+
+                result.user = {
+                    name:  name,
+                    email: email
+                };
+                result.token = token;
+                result.countTickets = false;
+
+                projectModel.getTicketCount(email, function(err, countTickets) {
+                    if (!err && countTickets) {
+                        result.countTickets = countTickets;
+                    }
+
+                    res.json(result);
+                });
+            } else {
+                res.json(result);
+            }
+
+            // Отправить ПУШ-оповещение
+            ticketModel.prepareTicketsForClient([ticket], function(err, data) {
+                var ticket = data[0];
+                global.io.to(project.code).emit('newTicket', { ticket: ticket, source: req.session.user ? req.session.user.email : false });
+                global.io.to(email       ).emit('newTicket', { ticket: ticket, source: req.session.user ? req.session.user.email : false });
+            });
+        });
     });
 });
 
@@ -162,28 +233,32 @@ router.post('/close', function (req, res) {
     var number = req.body.number;
 
     if (!req.session.user) {
-        res.end(JSON.stringify({ result: false, error: 'no auth' }));
+        res.json({ result: false, error: 'no auth' });
         return;
     }
 
     ticketModel.findTicket(projectCode, number, function(err, ticket) {
-        if (err) { res.end(JSON.stringify({ result: false, error: 'no ticket' })); return; }
+        if (err) { res.json({ result: false, error: 'no ticket' }); return; }
 
         if (ticketModel.hasRightToWrite(ticket, req.session.user)) {
             ticket.opened = false;
             ticket.save();
 
+
+            var project = projectModel.getProjectByCode(projectCode);
+            ticketModel.sendMailOnTicketClose(project, ticket);
+
             // Отправить ПУШ-оповещение
             ticketModel.prepareTicketsForClient([ticket], function(err, data) {
                 var ticket = data[0];
-                global.io.to(projectCode        ).emit('ticketClosed', { ticket: ticket });
-                global.io.to(ticket.author.email).emit('ticketClosed', { ticket: ticket });
+                global.io.to(projectCode        ).emit('ticketClosed', { ticket: ticket, source: req.session.user ? req.session.user.email : false });
+                global.io.to(ticket.author.email).emit('ticketClosed', { ticket: ticket, source: req.session.user ? req.session.user.email : false });
             });
 
-            res.end(JSON.stringify({ result: true }));
+            res.json({ result: true });
 
         } else {
-            res.end(JSON.stringify({ result: false, error: 'no rights' }));
+            res.json({ result: false, error: 'no rights' });
         }
     });
 });
@@ -196,28 +271,31 @@ router.post('/open', function (req, res) {
     var number = req.body.number;
 
     if (!req.session.user) {
-        res.end(JSON.stringify({ result: false, error: 'no auth' }));
+        res.json({ result: false, error: 'no auth' });
         return;
     }
 
     ticketModel.findTicket(projectCode, number, function(err, ticket) {
-        if (err) { res.end(JSON.stringify({ result: false, error: 'no ticket' })); return; }
+        if (err) { res.json({ result: false, error: 'no ticket' }); return; }
 
         if (ticketModel.hasRightToWrite(ticket, req.session.user)) {
             ticket.opened = true;
             ticket.save();
 
+            var project = projectModel.getProjectByCode(projectCode);
+            ticketModel.sendMailOnTicketOpen(project, ticket);
+
             // Отправить ПУШ-оповещение
             ticketModel.prepareTicketsForClient([ticket], function(err, data) {
                 var ticket = data[0];
-                global.io.to(projectCode        ).emit('ticketOpened', { ticket: ticket });
-                global.io.to(ticket.author.email).emit('ticketOpened', { ticket: ticket });
+                global.io.to(projectCode        ).emit('ticketOpened', { ticket: ticket, source: req.session.user ? req.session.user.email : false });
+                global.io.to(ticket.author.email).emit('ticketOpened', { ticket: ticket, source: req.session.user ? req.session.user.email : false });
             });
 
-            res.end(JSON.stringify({ result: true }));
+            res.json({ result: true });
 
         } else {
-            res.end(JSON.stringify({ result: false, error: 'no rights' }));
+            res.json({ result: false, error: 'no rights' });
         }
     });
 });

@@ -1,9 +1,14 @@
-const React = require('react');
+/*** @jsx React.DOM */
 
+const isIE9     = require('../../ie-check');
+const React     = require('react');
 const Dropzone  = require('react-dropzone');
 const extend    = require('extend');
 const Projects  = require('../../tickets/sidebar/projects');
 const FormMixin = require('../../../mixins/form-mixin');
+
+const _filesConfig = APP.files;
+const TAB_KEY      = 9;
 
 const AddForm = React.createClass({
     tiny: null,
@@ -11,6 +16,7 @@ const AddForm = React.createClass({
     getInitialState() {
         return {
             activeProject: window.location.hostname.split('.')[0].toUpperCase(),
+            dragHover: false,
             form: {
                 name: this.props.user && this.props.user.name ? this.props.user.name : '',
                 email: this.props.user && this.props.user.email ? this.props.user.email : '',
@@ -19,30 +25,24 @@ const AddForm = React.createClass({
             },
             errors: {
                 name: {empty: false},
-                email: {empty: false},
+                email: {empty: false, emailInvalid: false},
                 title: {empty: false},
                 text: {empty: false}
             },
             files: []
-        }
+        };
     },
 
     onSubmit(e) {
         e.preventDefault();
 
-        if (!this.validateForm()) return;
+        if (this.props.isSuccess || !this.validateForm()) return;
 
         this.setState({isLoading: true});
-        let data = new FormData();
-        data.append('name', this.state.form.name);
-        data.append('email', this.state.form.email);
-        data.append('title', this.state.form.title);
-        data.append('text', this.tiny.getContent({format: 'raw'}));
-        data.append('projectCode', this.state.activeProject);
 
-        for (var i = 0; i < this.state.files.length; i++) {
-            data.append("files[]", this.state.files[i]);
-        }
+        let data     = this.state.form;
+        data.files   = this.state.files;
+        data.project = this.state.activeProject;
 
         this.props.onSubmit({
             url: '/ticket/add',
@@ -52,9 +52,25 @@ const AddForm = React.createClass({
 
     onDrop(files) {
         const newFiles = this.state.files;
-        files.forEach((file) => newFiles.push(file));
+        let filesError = false;
+        files.forEach(function(file) {
+            let ext = file.name.split('.')[file.name.split('.').length - 1];
 
-        this.setState({files: newFiles});
+            if (newFiles.length >= _filesConfig.maxCount) {
+                filesError = 'Пожалуйста, не более ' + _filesConfig.maxCount + ' файлов.';
+            } else if (file.size > _filesConfig.maxSize) {
+                filesError = 'Пожалуйста, файлы не более ' + Math.round(_filesConfig.maxSize / 1000000) + 'Мб.';
+            } else if (_filesConfig.extensions.indexOf(ext) === -1) {
+                let exts   = _filesConfig.extensions.join(', ');
+                filesError = 'Извините, но я понимаю только следующие расширения файлов: ' + exts;
+            } else {
+                newFiles.push(file)
+            }
+        });
+
+        this.setState({files: newFiles, filesError, dragHover: false});
+
+        if (filesError) this.props.showModal({text: filesError});
     },
 
     onUploadClick(e) {
@@ -69,6 +85,33 @@ const AddForm = React.createClass({
         this.setState({files})
     },
 
+    componentWillReceiveProps(props) {
+        if (props.isPopup) {
+            setTimeout(function() {
+                React.findDOMNode(this.refs.title).focus();
+            }.bind(this), 700);
+        }
+
+        if (props.isSuccess) {
+            this.tiny.setContent('');
+            this.setState({
+                form: {
+                    name: this.props.user && this.props.user.name ? this.props.user.name : '',
+                    email: this.props.user && this.props.user.email ? this.props.user.email : '',
+                    title: '',
+                    text: ''
+                },
+                errors: {
+                    name: {empty: false},
+                    email: {empty: false, emailInvalid: false},
+                    title: {empty: false},
+                    text: {empty: false}
+                },
+                files: []
+            });
+        }
+    },
+
     componentDidMount() {
         tinymce.init({
             menubar: false,
@@ -76,11 +119,18 @@ const AddForm = React.createClass({
                 ed.on('keyup', function() {
                     this.onFieldChange('text');
                 }.bind(this));
+                ed.on('keydown', function(e) {
+                    if (!ed.getContent() && e.keyCode === 13) {
+                        e.preventDefault();
+                        return false;
+                    }
+                }.bind(this));
             }.bind(this),
+            toolbar: "undo redo | styleselect bold italic | alignleft aligncenter alignright | bullist numlist",
             statusbar: false,
-            plugins: 'autoresize autolink',
             autoresize_max_height: 200,
-            valid_elements: "@[src],img,br",
+            valid_elements: APP.allowedTags,
+            extended_valid_elements: "span[style],p[style]",
             autoresize_min_height: 120,
             selector: '#text',
             theme: 'modern',
@@ -99,17 +149,23 @@ const AddForm = React.createClass({
     },
 
     focusFirst(ev) {
-        if (ev.keyCode == 9 && !ev.shiftKey) {
+        if (ev.keyCode == TAB_KEY && !ev.shiftKey) {
             ev.preventDefault();
-            React.findDOMNode(this.refs.name).focus();
+            let el = this.props.user.name ? this.refs.title : this.refs.name;
+            React.findDOMNode(el).focus();
         }
     },
 
     focusLast(ev) {
-        if (ev.keyCode == 9 && ev.shiftKey) {
+        if (ev.keyCode == TAB_KEY && ev.shiftKey) {
             ev.preventDefault();
             React.findDOMNode(this.refs.submit).focus();
         }
+    },
+
+    closePopup(e) {
+        e.preventDefault();
+        this.props.closePopup();
     },
 
     onToggleProject(code) {
@@ -127,18 +183,17 @@ const AddForm = React.createClass({
                   action="javascript:void(0)"
                   method="post"
                   encType="multipart/form-data">
-                <input type="hidden" name="sessid" value="<?= md5(time()) ?>"/>
 
-                <div className="success-text">Тикет отправлен. <br/>Проверяйте почту.</div>
+                <div className="success-text">{this.props.isSuccess}</div>
 
-                {this.props.isPopup && Object.keys(this.props.projects).length > 1
-                    ?   <div className="row">
-                            <Projects noTitle={true}
-                               allowedProjects={this.props.projects}
-                               activeProjects={[this.state.activeProject]}
-                               onToggleProject={this.onToggleProject}
-                            />
-                        </div>
+                {this.props.isPopup && this.props.projects && Object.keys(this.props.projects).length > 1
+                    ? <div className="row">
+                    <Projects noTitle={true}
+                              allowedProjects={this.props.projects}
+                              activeProjects={[this.state.activeProject]}
+                              onToggleProject={this.onToggleProject}
+                        />
+                </div>
                     : ''
                 }
 
@@ -151,6 +206,7 @@ const AddForm = React.createClass({
                             onKeyUp={() => onFieldChange('name')}
                             ref="name"
                             type="text"
+                            value={this.state.form.name}
                             defaultValue={user&&user.name ? user.name : ''}
                             name="name"
                             onKeyDown={this.focusLast}
@@ -164,9 +220,10 @@ const AddForm = React.createClass({
                                onKeyUp={() => onFieldChange('email')}
                                ref="email"
                                type="text"
+                               value={this.state.form.email}
                                defaultValue={user&&user.email ? user.email : ''}
                                name="email"/>
-                        <span className="error-text">Необходимо указать Email</span>
+                        <span className="error-text">Необходимо указать валидный Email</span>
                     </label>
                 </div>
                 <div className="row">
@@ -176,6 +233,7 @@ const AddForm = React.createClass({
                                onKeyUp={() => onFieldChange('title')}
                                ref="title"
                                type="text"
+                               value={this.state.form.title}
                                name="title"/>
                         <span className="error-text">Необходимо указать тему</span>
                     </label>
@@ -187,20 +245,29 @@ const AddForm = React.createClass({
                         <span className="error-text">Необходимо описать проблему</span>
                     </label>
                 </div>
-                <div className="row-submit">
+                <div className="row-submit clearfix">
                     <input className={this.props.isLoading ? "btn btn-blue js-send loading" : "btn btn-blue js-send"}
                            type="submit"
+                           onClick={this.props.isSuccess && this.props.closePopup ? this.closePopup : function(){}}
                            onKeyDown={this.focusFirst}
                            ref="submit"
                            value="Отправить"/>
-                    <label className="file-label">
-                        <span style={{lineHeight: '36px'}} href="javascript:void(0);" onClick={this.onUploadClick}>Прикрепить файл</span>
-                        <span className="file-list">
-                            {this.state.files.map((file, i) => <File onDeleteFile={onDeleteFile} key={i} index={i} file={file}/>)}
-                        </span>
-                    </label>
+                    {isIE9 ? '' : <Dropzone activeClassName="drag-hover"
+                                            className="dropzone-drop"
+                                            ref="dropzone"
+                                            disableClick={true}
+                                            onDrop={this.onDrop}>
+                                    <label className="file-label">
+                                        <span style={{lineHeight: '36px'}} href="javascript:void(0);" onClick={this.onUploadClick}>Прикрепить файл</span>
+                                        <span className="file-list">
+                                            {this.state.files.map((file, i) => {
+                                                return <File onDeleteFile={onDeleteFile} key={i} index={i} file={file}/>
+                                            })}
+                                        </span>
+                                    </label>
+                                </Dropzone>
+                    }
                 </div>
-                <Dropzone style={{display: 'none'}} ref="dropzone" disableClick={true} onDrop={this.onDrop}/>
             </form>
         )
     }

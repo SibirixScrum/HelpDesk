@@ -3,32 +3,36 @@ var config = global.config;
 var projectModel = require('./project');
 var ticketModel = require('./ticket');
 
-var nodemailer  = require('nodemailer'),
-    transporter = nodemailer.createTransport({
-        service: 'Gmail',
-        auth: {
-            user: config.email.login,
-            pass: config.email.password
-        }
-    });
+var nodemailer  = require('nodemailer');
 
 var Imap       = require('imap'),
     inspect    = require('util').inspect,
     MailParser = require('mailparser').MailParser;
 
-var timeoutSetted = false;
+var timeoutSetted = {};
 
 /**
  *
  */
 exports.startCheckTimeout = function() {
-    if (timeoutSetted) {
+    for (var i = 0; i < config.projects.length; i++) {
+        var project = config.projects[i];
+        if (project.email) {
+            startProjectCheckTimeout(project);
+        }
+    }
+};
+
+function startProjectCheckTimeout(project) {
+    if (timeoutSetted[project.code]) {
         return;
     }
 
-    timeoutSetted = true;
-    setTimeout(checkInbox, config.email.checkInterval * 1000);
-};
+    timeoutSetted[project.code] = true;
+    setTimeout(function() {
+        checkInbox(project);
+    }, project.email.checkInterval * 1000);
+}
 
 /**
  *
@@ -36,20 +40,36 @@ exports.startCheckTimeout = function() {
  * @param subject
  * @param text
  * @param isHtml
+ * @param project
+ * @param attachments
  */
-exports.sendMail = function(to, subject, text, isHtml) {
+exports.sendMail = function(to, subject, text, isHtml, project, attachments) {
+    var transporter = nodemailer.createTransport({
+        host: project.email.smtpHost,
+        port: project.email.smtpPort,
+        secure: project.email.smtpSecure,
+        auth: {
+            user: project.email.login,
+            pass: project.email.password
+        }
+    });
+
     var mailOptions = {
-        from: 'Helpdesk <' + config.email.login + '>',
+        from: 'Helpdesk <' + project.email.login + '>',
         to: to,
         subject: subject
     };
 
     if (isHtml) {
-        text += '<br>\n<br>\n-- ' + config.email.sign;
+        text += '<br>\n<br>\n------------<br>\n' + project.email.sign;
         mailOptions.html = text;
     } else {
-        text += '\n\n-- ' + config.email.sign;
+        text += '\n\n------------\n' + project.email.sign;
         mailOptions.text = text;
+    }
+
+    if (attachments && attachments.length) {
+        mailOptions.attachments = attachments;
     }
 
     transporter.sendMail(mailOptions, function (error, info) {
@@ -69,16 +89,16 @@ function parseSubject(subject) {
     return matches[1];
 }
 
-function checkInbox() {
+function checkInbox(project) {
     var imap = new Imap({
-        user: config.email.login,
-        password: config.email.password,
-        host: config.email.host,
-        port: config.email.port,
-        tls: config.email.tls
+        user: project.email.login,
+        password: project.email.password,
+        host: project.email.host,
+        port: project.email.port,
+        tls: project.email.tls
     });
 
-    timeoutSetted = false;
+    timeoutSetted[project.code] = false;
 
     function openInbox(cb) {
         imap.openBox('INBOX', false, cb);
@@ -88,7 +108,7 @@ function checkInbox() {
         openInbox(function(err, box) {
             if (err) {
                 console.log('openinbox', err);
-                exports.startCheckTimeout();
+                startProjectCheckTimeout(project);
                 imap.end();
                 return;
             }
@@ -96,13 +116,13 @@ function checkInbox() {
             imap.search(['UNSEEN'], function(err, results) {
                 if (err) {
                     console.log('search unseen', err);
-                    exports.startCheckTimeout();
+                    startProjectCheckTimeout(project);
                     imap.end();
                     return;
                 }
 
                 if (!results.length) {
-                    exports.startCheckTimeout();
+                    startProjectCheckTimeout(project);
                     imap.end();
                     return;
                 }
@@ -140,10 +160,10 @@ function checkInbox() {
                 });
                 f.once('error', function(err) {
                     console.log('Fetch error: ' + err);
-                    exports.startCheckTimeout();
+                    startProjectCheckTimeout(project);
                 });
                 f.once('end', function() {
-                    exports.startCheckTimeout();
+                    startProjectCheckTimeout(project);
                     imap.end();
                 });
             });
@@ -152,17 +172,17 @@ function checkInbox() {
 
     imap.once('error', function(err) {
         console.log(err);
-        exports.startCheckTimeout();
+        startProjectCheckTimeout(project);
     });
 
     imap.once('close', function() {
         console.log('Mail sync close');
-        exports.startCheckTimeout();
+        startProjectCheckTimeout(project);
     });
 
     imap.once('end', function() {
         console.log('Mail sync end');
-        exports.startCheckTimeout();
+        startProjectCheckTimeout(project);
     });
 
     imap.connect();

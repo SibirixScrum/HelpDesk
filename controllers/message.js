@@ -1,4 +1,5 @@
 var express = require('express');
+var striptags = require('striptags');
 var multer = require('multer');
 var fs = require('fs');
 var router = express.Router();
@@ -20,35 +21,39 @@ var cpUpload = upload.fields([{ name: 'files[]', maxCount: global.config.files.m
 router.post('/add', cpUpload, function (req, res) {
     var projectCode = req.body.projectCode;
     var number = req.body.number;
-    var text   = req.body.text ? req.body.text.trim() : false;
+    var text   = req.body.text ? req.body.text.trim() : '';
+    text = striptags(text, global.config.tickets.editor.allowedTags);
+
+    if (!req.files) req.files = {};
 
     if (!text) {
         fileModel.cleanupFiles(req.files['files[]']);
-        res.end(JSON.stringify({ result: false, error: 'no text' }));
+        res.json({ result: false, error: 'no text' });
         return;
     }
 
     if (!req.session.user) {
         fileModel.cleanupFiles(req.files['files[]']);
-        res.end(JSON.stringify({ result: false, error: 'no auth' }));
+        res.json({ result: false, error: 'no auth' });
         return;
     }
 
     ticketModel.findTicket(projectCode, number, function(err, ticket) {
         if (err) {
             fileModel.cleanupFiles(req.files['files[]']);
-            res.end(JSON.stringify({result: false, error: 'no ticket'}));
+            res.json({result: false, error: 'no ticket'});
             return;
         }
 
         if (!ticketModel.hasRightToWrite(ticket, req.session.user)) {
             fileModel.cleanupFiles(req.files['files[]']);
-            res.end(JSON.stringify({ result: false, error: 'no rights' }));
+            res.json({ result: false, error: 'no rights' });
             return;
         }
 
         // загрузка файлов
         var files = fileModel.proceedUploads(ticket.project + '-' + ticket.number, req.files, 'files[]');
+        var project = projectModel.getProjectByCode(projectCode);
 
         // Добавить сообщение
         var message = new messageModel.model({
@@ -57,21 +62,24 @@ router.post('/add', cpUpload, function (req, res) {
             text:   text,
             files:  files
         });
-        ticket.lastDate = new Date();
+
+        if (message.author != project.responsible) {
+            ticket.lastDate = new Date();
+        }
+
         ticket.messages.push(message);
         ticket.save();
 
-        var project = projectModel.getProjectByCode(projectCode);
         ticketModel.sendMailOnMessageAdd(project, ticket, message);
 
         // Отправить ПУШ-оповещение
         ticketModel.prepareTicketsForClient([ticket], function(err, data) {
             var ticket = data[0];
-            global.io.to(projectCode        ).emit('ticketMessage', { ticket: ticket });
-            global.io.to(ticket.author.email).emit('ticketMessage', { ticket: ticket });
+            global.io.to(projectCode        ).emit('ticketMessage', { ticket: ticket, source: req.session.user ? req.session.user.email : false });
+            global.io.to(ticket.author.email).emit('ticketMessage', { ticket: ticket, source: req.session.user ? req.session.user.email : false });
         });
 
-        res.end(JSON.stringify({ result: true }));
+        res.json({ result: true });
     });
 });
 

@@ -13,8 +13,8 @@ const TicketsDetailMessages = React.createClass({
     render() {
         return (
             <div className="ticket-messages">
-                {this.props.opened ? <TicketMessage ticket={this.props.ticket} /> : ''}
-                {this.props.ticket.opened ? <TicketAnswerForm ticket={this.props.ticket} /> : ''}
+                {this.props.ticket ? <TicketMessage ticket={this.props.ticket} /> : ''}
+                {this.props.ticket.opened ? <TicketAnswerForm isLoading={this.props.isLoading} showModal={this.props.showModal} ticket={this.props.ticket} /> : ''}
             </div>
         )
     }

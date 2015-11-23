@@ -13,6 +13,13 @@ var fileSchema = new mongoose.Schema({
     path: String   // Путь на сервере для скачивания
 });
 
+fileSchema.methods.toAttach = function() {
+    return {
+        filename: this.name,
+        content: fs.readFileSync(global.config.appRoot + 'public' + this.path)
+    };
+};
+
 exports.scheme = fileSchema;
 exports.model  = mongoose.model(collectionName, fileSchema);
 
@@ -23,7 +30,7 @@ exports.model  = mongoose.model(collectionName, fileSchema);
 exports.cleanupFiles = function(fileArray) {
     if (!(typeof fileArray == 'object') || (!fileArray.length)) return;
     for (var i = 0; i < fileArray.length; i++) {
-        fs.unlink(fileArray[i].path);
+        if (fileArray[i].path) fs.unlink(fileArray[i].path);
     }
 };
 
@@ -70,13 +77,48 @@ exports.proceedUploads = function(ticketNumber, reqFiles, key) {
             var newName = Math.random().toString(36).slice(-8) + ext;
 
             if (file.path) {
-                fs.rename(file.path, path + newName);
+                fs.renameSync(file.path, path + newName);
             } else if (file.buffer) {
-                fs.writeFile(path + newName, file.buffer);
+                fs.writeFileSync(path + newName, file.buffer);
             }
 
             var fileObj = new this.model({
                 name: file.originalname,
+                path: shortPath + newName
+            });
+            files.push(fileObj);
+        }
+    }
+
+    return files;
+};
+
+exports.proceedMailAttachments = function(ticketNumber, attachments) {
+    var shasum = crypto.createHash('sha1');
+    shasum.update(ticketNumber);
+    var shortPath = '/tickets/' + shasum.digest('hex') + '/';
+    var path = global.config.appRoot + 'public' + shortPath;
+
+    try { fs.mkdirSync(path); } catch(e) { }
+
+    var files = [];
+    if (attachments && attachments.length) {
+        var added = 0;
+        for (var i = 0; i < attachments.length && added < global.config.files.maxCount; i++) {
+            var file = attachments[i];
+
+            if (file.length > global.config.files.maxSize) {
+                continue;
+            }
+
+            added++;
+            var ext = pathModule.extname(file.fileName);
+            var newName = Math.random().toString(36).slice(-8) + ext;
+
+            fs.writeFile(path + newName, file.content);
+
+            var fileObj = new this.model({
+                name: file.fileName,
                 path: shortPath + newName
             });
             files.push(fileObj);

@@ -2,11 +2,13 @@ const extend = require('extend');
 const ActionTypes = require('../constants/action-types');
 
 const initialState = {
+    modal: false,
     user: window.APP.user,
     allowedProjects: window.APP.countTickets
 };
 
 function root(state = initialState, action={type: ''}) {
+    console.log(action);
     switch (action.type) {
         case ActionTypes.UPDATE_COUNTERS:
             let allowedProject = extend({}, state.allowedProjects);
@@ -24,6 +26,15 @@ function root(state = initialState, action={type: ''}) {
 
             allowedProject[action.ticket.project] = ticketProject;
             return extend({}, state, {allowedProjects: allowedProject});
+
+        case ActionTypes.SHOW_MODAL:
+            return extend({}, state, {
+                modal: action.content
+            });
+        case ActionTypes.HIDE_MODAL:
+            return extend({}, state, {
+                modal: false
+            });
 
         case ActionTypes.LOGIN_SUCCESS:
             return extend({}, state, {

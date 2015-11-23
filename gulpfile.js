@@ -1,14 +1,17 @@
 var browserify = require('browserify');
 var gulp       = require('gulp');
-var source     = require("vinyl-source-stream");
+var source     = require('vinyl-source-stream');
 var reload     = require('gulp-livereload');
 var notify     = require('gulp-notify');
 var gaze       = require('gaze');
 var babelify   = require('babelify');
 var reactify   = require('reactify');
+var envify     = require('envify');
 
 gulp.task('browserify', function() {
     var b = browserify();
+
+    b.transform(envify, {'global': true, '_': 'purge', NODE_ENV: 'production'});
     b.transform(reactify);
     b.transform(babelify);
     b.transform({global: true}, 'uglifyify');
@@ -18,8 +21,7 @@ gulp.task('browserify', function() {
             return err.toString()
         }))
         .pipe(source('bundle.js'))
-        .pipe(gulp.dest('./public/js/'))
-        .pipe(reload());
+        .pipe(gulp.dest('./public/js/'));
 });
 
 gulp.task('watch', ['browserify'], function() {
@@ -31,8 +33,6 @@ gulp.task('watch', ['browserify'], function() {
             gulp.start('browserify');
         })
     });
-
-    reload.listen();
 });
 
 gulp.task('default', ['watch']);

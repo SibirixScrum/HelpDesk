@@ -19,14 +19,16 @@ function validateProjectsConfig() {
     }
 
     var i, responsibles = {};
+    var colorLength = global.config.projectColors.length;
     for (i = 0; i < projectsList.length; i++) {
         var p = projectsList[i];
+        p.color = '#' + global.config.projectColors[i % colorLength];
         if (!p.code || !p.name || !p.domain || !p.responsible) {
             throw "Projects config are invalid! Required fields: code, name, domain, responsible.";
         }
 
         if (!responsibles[p.responsible]) responsibles[p.responsible] = [];
-        responsibles[p.responsible].push(p.name);
+        responsibles[p.responsible].push(p);
     }
 
     // Проверить, что ответственные созданы
@@ -37,6 +39,20 @@ function validateProjectsConfig() {
 
     return true;
 }
+
+/**
+ *
+ * @param x
+ * @returns {*}
+ */
+exports.getBigUniqueNumber = function(x) {
+    var prime = 9999667;
+    var gap = 100;
+    var n = x + gap;
+    if (n >= prime) return n;
+    var residue = (n * n) % prime;
+    return (n <= prime / 2) ? residue : prime - residue;
+};
 
 /**
  * Получить проект по его коду
@@ -181,6 +197,7 @@ exports.getAll = function() {
 
         var pr = extend({}, project);
         delete pr.responsible;
+        delete pr.email;
 
         return pr;
     });

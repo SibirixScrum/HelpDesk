@@ -14,14 +14,14 @@ router.post('/login', function (req, res) {
     var pass  = req.body.password.trim();
 
     if (!email.length || !pass.length) {
-        res.end(JSON.stringify({ result: false, error: 'no auth data' }));
+        res.json({ result: false, error: 'no auth data' });
         return;
     }
 
     // Ищем пользователя
     userModel.model.find({ email: email }, function(err, data) {
         if (err || !data || !data.length) {
-            res.end(JSON.stringify({ result: false, error: 'no user' }));
+            res.json({ result: false, error: 'no user' });
             return;
         }
 
@@ -51,21 +51,29 @@ router.post('/login', function (req, res) {
                     answer.countTickets = countTickets;
                 }
 
-                res.end(JSON.stringify(answer));
+                res.json(answer);
             });
 
         } else {
-            res.end(JSON.stringify({ result: false, error: 'wrong pass' }));
+            res.json({ result: false, error: 'wrong pass' });
         }
     });
 });
+
+router.post('/reset', function(req, res) {
+    var email = req.body.email.trim();
+
+    userModel.sendResetEmail(email, function(response) {
+        res.json(response);
+    })
+})
 
 /**
  * Логаут
  */
 router.all('/logout', function (req, res) {
     req.session.user = null;
-    res.end(JSON.stringify({ result: true }));
+    res.json({ result: true });
 });
 
 module.exports = router;

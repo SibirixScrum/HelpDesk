@@ -7,6 +7,8 @@ var projects = models.project.getAll();
 function renderHome(req, res, countTickets) {
     res.render('index', {
         title: 'Helpdesk',
+        files: global.config.files,
+        passChanged: req.body.passChanged,
         user: req.session.user ? req.session.user : false,
         countTickets: countTickets,
         projects: projects
@@ -30,6 +32,15 @@ router.get('*', function (req, res) {
             renderHome(req, res, err ? false : countTickets);
         });
     } else {
+        if (req.query.reset && req.query.login) {
+            models.user.resetPassword(req.query.login, req.query.reset, function(success) {
+                req.body.passChanged = success;
+                renderHome(req, res, false);
+            });
+
+            return;
+        }
+
         renderHome(req, res, false);
     }
 });

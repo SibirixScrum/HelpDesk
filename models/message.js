@@ -13,5 +13,17 @@ var messageSchema = new mongoose.Schema({
     files:  [fileScheme] // Массив прикрепленных файлов
 });
 
+messageSchema.methods.getFilesForMail = function() {
+    var attachments = [];
+
+    if (this.files && this.files.length) {
+        for (var i = 0; i < this.files.length; i++) {
+            attachments.push(this.files[i].toAttach());
+        }
+    }
+
+    return attachments;
+};
+
 exports.scheme = messageSchema;
 exports.model  = mongoose.model(collectionName, messageSchema);

@@ -3,8 +3,10 @@
 .add-ticket-page {
     &.wrapper {
         justify-content: center;
+        -ms-flex-pack: center;
         align-items: center;
         flex-direction: column;
+        padding: 30px 0;
         color: #fff;
     }
 
@@ -33,9 +35,14 @@
         }
     }
 
+    .sibirix {
+        left: 30px;
+        bottom: 26px;
+    }
+
     h1 {
         font: bold 30px/30px @font;
-        margin: 0 0 6px;
+        margin: 6px 0;
     }
 
     h2 {
@@ -84,6 +91,7 @@
             .row {
                 transition: all .3s ease;
                 opacity: 0;
+                visibility: hidden;
             }
             .file-label {
                 transition: all 0s ease;
@@ -121,7 +129,14 @@
 
         .added-file {
             transition: all, .2s;
+            max-width: 210px;
+            width: auto;
+            display: inline-block;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            overflow: hidden;
             color: #777;
+            float: right;
             line-height: 24px;
             cursor: pointer;
             opacity: .6;
@@ -141,11 +156,27 @@
             margin: 0 0 10px;
         }
 
+        .reset-pass-wrap {
+            a {
+                text-decoration: none;
+                color: #3896ff;
+                font: 400 13px/1 @font;
+            }
+
+            &.back {
+                position: absolute;
+                right: 0;
+                bottom: 19px;
+            }
+        }
+
         .row-submit {
             .clearfix();
+            display: inline-block;
+            line-height: 1;
             position: relative;
             transition: all .4s;
-            margin: 30px 0 8px;
+            margin: 20px 0 8px;
 
             .btn {
                 transition: all .7s;
@@ -191,7 +222,17 @@
         }
 
         .file-label {
+            overflow: visible;
             float: right;
+            text-align: right;
+
+            &:before {
+                transition: all .2s ease;
+            }
+
+            span {
+                transition: all .2s ease;
+            }
         }
 
         textarea {

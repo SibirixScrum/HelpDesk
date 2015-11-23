@@ -1,4 +1,3 @@
-/*** @jsx React.DOM */
 const React       = require('react');
 const ReactRouter = require('react-router');
 const Router      = ReactRouter;
@@ -29,6 +28,7 @@ const routes = (
     <Route name='app' path='/' handler={Root}>
         <Route name="home" path="/" handler={Home}/>
         <Route name="tickets" path="/tickets/" handler={Tickets}/>
+        <Route name="ticketsDetail" path="/tickets/:id" handler={Tickets}/>
         <NotFoundRoute handler={NotFound}/>
     </Route>
 );

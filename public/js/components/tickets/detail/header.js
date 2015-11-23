@@ -1,24 +1,30 @@
 /*** @jsx React.DOM */
 const React = require('react');
+
 const TicketsDetailHeader = React.createClass({
     render() {
-        const setTicketState = this.props.setTicketState;
-        const project = this.props.ticket.project;
-        const number = this.props.ticket.number;
-        const opened = this.props.ticket.opened;
-        const classes = opened ? "btn btn-red js-close-ticket" : "btn btn-blue-small js-close-ticket";
+        const {setTicketState, ticket, isBtnDisabled} = this.props;
+        const classes = ticket.opened ? "btn btn-red js-close-ticket" : "btn btn-blue-small js-close-ticket";
 
-        let proj = APP.projects.filter(function(project) {
-            return project.code === this.props.ticket.project;
-        }.bind(this));
+        let proj = APP.projects.filter((project) => project.code === ticket.project);
         proj = proj[0];
+
+        let onStateClickHandler = function() {
+            if (!isBtnDisabled) {
+                setTicketState(!ticket.opened, ticket.project, ticket.number)
+            }
+        };
 
         return (
             <div className="column-title">
                 <a onClick={this.props.closePanel} className="icon-back js-back" href="javascript:void(0)"></a>
-                <a onClick={() => setTicketState(!opened, project, number)} className={classes} href="javascript:void(0)">{opened ? 'Закрыть тикет' : 'Открыть тикет'}</a>
-                <span className="ticket-title">{this.props.ticket.title}</span>
-                {proj ? <span className="number">{proj.letters}-{this.props.ticket.number}</span> : ''}
+
+                <a onClick={() => onStateClickHandler()}
+                   className={classes}
+                   href="javascript:void(0)">{ticket.opened ? 'Закрыть тикет' : 'Открыть тикет'}</a>
+
+                <span className="ticket-title">{ticket.title}</span>
+                {proj ? <span className="number">{proj.letters}-{ticket.number}</span> : ''}
             </div>
         )
     }

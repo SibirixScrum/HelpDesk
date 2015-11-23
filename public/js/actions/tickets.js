@@ -1,6 +1,6 @@
 const ActionTypes = require('../constants/action-types');
 
-const reqwest = require('reqwest');
+const request = require('superagent');
 
 function addTicket(ticket) {
     return {
@@ -30,9 +30,17 @@ function setState(filter) {
     };
 }
 
-function beforeFetchItems() {
+function setFilter(filter) {
+    return {
+        type: ActionTypes.SET_FILTER,
+        filter
+    };
+}
+
+function beforeFetchItems(filter) {
     return {
         type: ActionTypes.START_FETCH_ITEMS,
+        filter,
         isLoading: true
     };
 }
@@ -48,22 +56,21 @@ function afterFetchItems(items, clear) {
 
 function fetchItems(offset, sortType, state, projects, clear = true) {
     return dispatch => {
-        dispatch(beforeFetchItems());
+        dispatch(beforeFetchItems({sort: sortType, state, projects}));
 
-        reqwest({
-            url: '/ticket/list/',
-            method: 'get',
-            data: {
+        request.get('/ticket/list/')
+            .set('Accept', 'application/json')
+            .query({
                 offset,
                 state,
-                projects,
-                sort: sortType
-            },
-            success: function (resp) {
-                var answer = JSON.parse(resp.response);
+                projects: projects.join(','),
+                sort: sortType,
+                nocache: Date.now()
+            })
+            .end(function(err, resp) {
+                const answer = JSON.parse(resp.text);
                 dispatch(afterFetchItems(answer.list, clear))
-            }
-        });
+            });
     };
 }
 
@@ -82,10 +89,42 @@ function setTicketListSort(sort) {
     };
 }
 
-function setDetailTicket(ticket) {
+function beforeOpenDetail(ticket) {
     return {
-        type: ActionTypes.SET_DETAIL_TICKET,
+        type: ActionTypes.START_OPEN_DETAIL,
         ticket
+    }
+}
+
+function afterOpenDetail(ticket) {
+    return {
+        type: ActionTypes.END_OPEN_DETAIL,
+        ticket
+    }
+}
+
+function closeDetail() {
+    return {
+        type: ActionTypes.CLOSE_DETAIL
+    }
+}
+
+function setDetailTicket(ticket) {
+    return dispatch => {
+        dispatch(beforeOpenDetail(ticket));
+
+        request.get(`/ticket/detail/${ticket.project}/${ticket.number}/`)
+            .set('Accept', 'application/json')
+            .query({
+                nocache: Date.now()
+            })
+            .end(function(err, resp) {
+                const answer = JSON.parse(resp.text);
+
+                if (answer.result) {
+                    dispatch(afterOpenDetail(answer.ticket));
+                }
+            });
     };
 }
 
@@ -104,7 +143,9 @@ function resetState() {
 module.exports = {
     setState, 
     beforeFetchItems, 
-    afterFetchItems, 
+    afterFetchItems,
+    beforeOpenDetail,
+    afterOpenDetail,
     fetchItems, 
     toggleProject,
     activeProjects,
@@ -113,5 +154,7 @@ module.exports = {
     loadMore,
     updateTicket,
     resetState,
-    addTicket
+    addTicket,
+    closeDetail,
+    setFilter
 };

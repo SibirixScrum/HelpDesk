@@ -1,5 +1,4 @@
 const {compose, createStore, applyMiddleware } = require('redux');
-const {devTools, persistState} = require('redux-devtools');
 const reduxThunk = require('redux-thunk');
 
 const rootReducers = require('../reducers');

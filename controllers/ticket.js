@@ -189,7 +189,7 @@ router.post('/add', cpUpload, function (req, res) {
             };
 
             if (pass) {
-                var token = jsonwebtoken.sign(email, global.config.socketIo.secret, { expiresInMinutes: global.config.socketIo.expire });
+                var token = jsonwebtoken.sign(email, global.config.socketIo.secret, { expiresIn: global.config.socketIo.expire * 60 });
 
                 req.session.user = {
                     email: email,

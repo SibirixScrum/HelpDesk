@@ -28,7 +28,7 @@ router.post('/login', function (req, res) {
         var user = data[0];
         // Проверяем пароль
         if (userModel.validatePassword(user.password, pass)) {
-            var token = jsonwebtoken.sign(email, global.config.socketIo.secret, { expiresInMinutes: global.config.socketIo.expire });
+            var token = jsonwebtoken.sign(email, global.config.socketIo.secret, { expiresIn: global.config.socketIo.expire * 60 });
 
             req.session.user = {
                 email: email,

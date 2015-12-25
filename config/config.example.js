@@ -49,7 +49,8 @@ exports.projects = [
             checkInterval: 30, // in seconds
             smtpHost: 'smtp.gmail.com',
             smtpPort: 465,
-            smtpSecure: true
+            smtpSecure: true,
+            keepAlive: false // Persistent connection
         },
         files: [                              // Array of files for project, use for documentation
             /*{

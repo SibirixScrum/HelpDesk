@@ -197,7 +197,7 @@ exports.sendMailOnTicketOpen = sendMailOnTicketOpen;
  * @param ticket
  */
 function sendMailOnTicketAdd(project, ticket) {
-    var ticketNumber = project.code + '-' + ticket.number;
+    var ticketNumber = this.compileTicketNumber(project, ticket.number);
 
     var to = project.responsible;
     var subject = 'Helpdesk создан новый тикет: "' + ticket.title + '" [#' + ticketNumber + ']';

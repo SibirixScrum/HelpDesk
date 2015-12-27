@@ -18,7 +18,11 @@ exports.startCheckTimeout = function() {
     for (var i = 0; i < config.projects.length; i++) {
         var project = config.projects[i];
         if (project.email) {
-            startProjectCheckTimeout(project);
+            if (project.email.keepAlive === true) {
+                startProjectEmailListener(project);
+            } else {
+                startProjectCheckTimeout(project);
+            }
         }
     }
 };
@@ -32,6 +36,99 @@ function startProjectCheckTimeout(project) {
     setTimeout(function() {
         checkInbox(project);
     }, project.email.checkInterval * 1000);
+}
+
+/**
+ * Start IMAP listener
+ * @param project
+ */
+function startProjectEmailListener(project) {
+    var imap = new Imap({
+        user: project.email.login,
+        password: project.email.password,
+        host: project.email.host,
+        port: project.email.port,
+        tls: project.email.tls
+    });
+
+    function parseUnread() {
+        imap.search(['UNSEEN'], function (err, results) {
+            if (err) {
+                return console.log(err);
+            }
+
+            if (!results.length) {
+                return console.log('INBOX is empty');
+            }
+
+            var f = imap.fetch(results, { bodies: '', markSeen: true });
+
+            f.on('message', function(msg, seqno) {
+                var mailParser = new MailParser();
+
+                mailParser.on('end', function(mailObject) {
+                    var ticketCode = parseSubject(mailObject.subject);
+
+                    if (ticketCode) {
+                        var codeParts = ticketCode.split('-');
+                        var projectLetters = codeParts[0];
+                        var ticketId = parseInt(codeParts[1], 10);
+                        var project = projectModel.getProjectByLetters(projectLetters);
+
+                        if (project && ticketId) {
+                            ticketModel.addMessageFromMail(project, ticketId, mailObject);
+                        }
+                    }
+                });
+
+                msg.on('body', function(stream, info) {
+                    stream.on('data', function(chunk) {
+                        mailParser.write(chunk.toString('utf8'));
+                    });
+                });
+
+                msg.once('end', function() {
+                    mailParser.end();
+                });
+            });
+
+            f.once('error', function(err) {
+                console.log('Fetch error: ' + err);
+            });
+
+            f.once('end', function() {
+                console.log('Fetch end');
+            });
+        });
+    }
+
+    imap.on('ready', function() {
+        imap.openBox('INBOX', false, function (err, box) {
+            if (err) {
+                imap.end();
+                return console.log(err);
+            }
+
+            parseUnread();
+
+            imap.on('mail', parseUnread);
+        });
+    });
+
+    imap.on('error', function(err) {
+        console.error(err);
+    });
+
+    imap.on('end', function() {
+        console.log('Connection ended');
+
+        // try to reconnect every 30 seconds
+        setTimeout(function () {
+            imap.connect();
+        }, 30000);
+    });
+
+    imap.connect();
 }
 
 /**

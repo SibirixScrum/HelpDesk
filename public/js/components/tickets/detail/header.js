@@ -23,7 +23,7 @@ const TicketsDetailHeader = React.createClass({
                    className={classes}
                    href="javascript:void(0)">{ticket.opened ? 'Закрыть тикет' : 'Открыть тикет'}</a>
 
-                <span className="ticket-title">{ticket.title}</span>
+                <span className="ticket-title" title={ticket.title}>{ticket.title}</span>
                 {proj ? <span className="number">{proj.letters}-{ticket.number}</span> : ''}
             </div>
         )

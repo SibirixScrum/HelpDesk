@@ -96,6 +96,10 @@ exports.addMessageFromMail = function(project, number, mailObject) {
             messageObj.text += '<br><br>Внимание! Некоторые файлы не прошли валидацию и не будут отображены в сообщении.';
         }
 
+        if (messageObj.author != project.responsible) {
+            ticket.lastDate = new Date();
+        }
+
         ticket.messages.push(messageObj);
         ticket.save();
 
@@ -104,8 +108,14 @@ exports.addMessageFromMail = function(project, number, mailObject) {
         // Отправить ПУШ-оповещение
         self.prepareTicketsForClient([ticket], function(err, data) {
             var ticket = data[0];
-            global.io.to(project.code       ).emit('ticketMessage', { ticket: ticket });
-            global.io.to(ticket.author.email).emit('ticketMessage', { ticket: ticket });
+            global.io.to(project.code).emit('ticketMessage', {
+                ticket: ticket,
+                source: project.responsible == messageObj.author ? project.responsible : ticket.author.email
+            });
+            global.io.to(ticket.author.email).emit('ticketMessage', {
+                ticket: ticket,
+                source: project.responsible == messageObj.author ? project.responsible : ticket.author.email
+            });
         });
     });
 };
@@ -308,7 +318,7 @@ exports.compileTicketNumber = function(project, ticketNumber) {
  * @param ticketList
  * @param callback
  */
-exports.prepareTicketsForClient = function(ticketList, callback) {
+    exports.prepareTicketsForClient = function(ticketList, callback) {
     var userMails = {};
 
     for (var i = 0; i < ticketList.length; i++) {

@@ -93,3 +93,8 @@ exports.tickets = {
         limit: 100 // Load tickets in one page
     }
 };
+
+// Create tickets from new emails (without existent ticket number)
+exports.createTicketFromEmail = true;
+// Default project to add new tickets created from emails
+exports.ticketFromEmailProject = 'HD';

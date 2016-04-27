@@ -335,6 +335,98 @@ function checkInbox(project) {
                                 ticketModel.addMessageFromMail(project, ticketId, mailObject);
                             }
                         }
+						else if (config.createTicketFromEmail && config.ticketFromEmailProject) {
+                        var project = projectModel.getProjectByLetters(config.ticketFromEmailProject);
+
+                        if (!project) return;
+
+                        // new ticket creation
+                        var author = mailObject.from[0];
+                        var email  = author.address;
+                        var name   = author.name || author.address;
+                        var title  = mailObject.subject || 'Новый тикет из почты';
+                        var text   = mailObject.html;
+
+                        if (text) {
+                            text = text.replace(/<base[^>]*>/ig, '');
+                        } else {
+                            text = mailObject.text.replace(/\r?\n/g, '<br>');
+                        }
+                        text = striptags(text, global.config.tickets.editor.allowedTags);
+
+                        if (!email || !name || !title || !text) return;
+
+                        var ticket = new ticketModel.model({
+                            opened: true,
+                            lastDate: new Date(),
+                            title: title,
+                            project: project.code,
+                            author: email,
+                            messages: []
+                        });
+
+                        ticket.save(function(err, ticket) {
+                            if (err) return;
+
+                            ticket.number = projectModel.getBigUniqueNumber(ticket.autoCounter);
+
+                            // Сохранение тикета
+                            var message = new messageModel.model({
+                                date: new Date(),
+                                author: email,
+                                text: text,
+                                files: fileModel.proceedMailAttachments(project.code + '-' + ticket.number, mailObject.attachments)
+                            });
+
+                            ticket.messages = [message];
+                            ticket.save();
+
+                            // проверить/создать пользователя и отправить уведомление
+                            userModel.createGetUser(email, name, function(err, user, pass) {
+                                // Если передан пароль - пользователь создан
+                                if (pass) {
+                                    ticketModel.sendMailOnTicketAddUserCreate(project, ticket, pass);
+                                } else {
+                                    ticketModel.sendMailOnTicketAdd(project, ticket);
+                                }
+
+                                var result = {
+                                    project: project.code,
+                                    number: ticket.number
+                                };
+
+                                if (pass) {
+                                    var token = jsonwebtoken.sign(email, global.config.socketIo.secret, {expiresIn: global.config.socketIo.expire * 60});
+
+                                    result.user = {
+                                        name: name,
+                                        email: email
+                                    };
+
+                                    result.token        = token;
+                                    result.countTickets = false;
+
+                                    projectModel.getTicketCount(email, function(err, countTickets) {
+                                        if (!err && countTickets) {
+                                            result.countTickets = countTickets;
+                                        }
+                                    });
+                                }
+
+                                global.io.to(project.code).emit('newTicket', {
+                                    ticket: ticket,
+                                    source: project.responsible
+                                });
+                            });
+                        });
+                    }
+						
+						
+						
+						
+						
+						
+						
                     });
 
                     msg.on('body', function(stream, info) {

@@ -8,6 +8,7 @@ var fileScheme = require('./file').scheme;
 
 var messageSchema = new mongoose.Schema({
     date:   Date,   // Дата создания сообщения
+    created: { type: Date, default: Date.now }, // Дата добавления сообщения в базу
     author: String, // Email автора
     text:   String, // Текст сообщения
     files:  [fileScheme] // Массив прикрепленных файлов

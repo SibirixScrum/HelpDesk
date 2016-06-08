@@ -11,7 +11,6 @@ var striptags    = require('striptags');
 var jsonwebtoken = require('jsonwebtoken');
 
 var Imap       = require('imap'),
-    inspect    = require('util').inspect,
     MailParser = require('mailparser').MailParser;
 
 var timeoutSetted = {};
@@ -73,104 +72,7 @@ function startProjectEmailListener(project) {
             f.on('message', function(msg, seqno) {
                 var mailParser = new MailParser();
 
-                mailParser.on('end', function(mailObject) {
-                    var ticketCode = parseSubject(mailObject.subject);
-
-                    if (ticketCode) {
-                        var codeParts      = ticketCode.split('-');
-                        var projectLetters = codeParts[0];
-                        var ticketId       = parseInt(codeParts[1], 10);
-                        var project        = projectModel.getProjectByLetters(projectLetters);
-
-                        if (project && ticketId) {
-                            ticketModel.addMessageFromMail(project, ticketId, mailObject);
-                        }
-                    } else if (config.createTicketFromEmail && config.ticketFromEmailProject) {
-                        var project = projectModel.getProjectByLetters(config.ticketFromEmailProject);
-
-                        if (!project) return;
-
-                        // new ticket creation
-                        var author = mailObject.from[0];
-                        var email  = author.address;
-                        var name   = author.name || author.address;
-                        var title  = mailObject.subject || 'Новый тикет из почты';
-                        var text   = mailObject.html;
-
-                        if (text) {
-                            text = text.replace(/<base[^>]*>/ig, '');
-                        } else {
-                            text = mailObject.text.replace(/\r?\n/g, '<br>');
-                        }
-                        text = striptags(text, global.config.tickets.editor.allowedTags);
-
-                        if (!email || !name || !title || !text) return;
-
-                        var ticket = new ticketModel.model({
-                            opened: true,
-                            lastDate: new Date(),
-                            title: title,
-                            project: project.code,
-                            author: email,
-                            messages: []
-                        });
-
-                        ticket.save(function(err, ticket) {
-                            if (err) return;
-
-                            ticket.number = projectModel.getBigUniqueNumber(ticket.autoCounter);
-
-                            // Сохранение тикета
-                            var message = new messageModel.model({
-                                date: new Date(),
-                                author: email,
-                                text: text,
-                                files: fileModel.proceedMailAttachments(project.code + '-' + ticket.number, mailObject.attachments)
-                            });
-
-                            ticket.messages = [message];
-                            ticket.save();
-
-                            // проверить/создать пользователя и отправить уведомление
-                            userModel.createGetUser(email, name, function(err, user, pass) {
-                                // Если передан пароль - пользователь создан
-                                if (pass) {
-                                    ticketModel.sendMailOnTicketAddUserCreate(project, ticket, pass);
-                                } else {
-                                    ticketModel.sendMailOnTicketAdd(project, ticket);
-                                }
-
-                                var result = {
-                                    project: project.code,
-                                    number: ticket.number
-                                };
-
-                                if (pass) {
-                                    var token = jsonwebtoken.sign(email, global.config.socketIo.secret, {expiresIn: global.config.socketIo.expire * 60});
-
-                                    result.user = {
-                                        name: name,
-                                        email: email
-                                    };
-
-                                    result.token        = token;
-                                    result.countTickets = false;
-
-                                    projectModel.getTicketCount(email, function(err, countTickets) {
-                                        if (!err && countTickets) {
-                                            result.countTickets = countTickets;
-                                        }
-                                    });
-                                }
-
-                                global.io.to(project.code).emit('newTicket', {
-                                    ticket: ticket,
-                                    source: project.responsible
-                                });
-                            });
-                        });
-                    }
-                });
+                mailParser.on('end', processMailObject);
 
                 msg.on('body', function(stream, info) {
                     stream.on('data', function(chunk) {
@@ -319,23 +221,8 @@ function checkInbox(project) {
 
                 f.on('message', function(msg, seqno) {
                     var mailParser = new MailParser();
-                    mailParser.on('end', function(mailObject) {
-                        var ticketCode = parseSubject(mailObject.subject);
 
-                        if (ticketCode) {
-                            var codeParts      = ticketCode.split('-');
-                            var projectLetters = codeParts[0];
-                            var ticketId       = parseInt(codeParts[1], 10);
-                            var project        = projectModel.getProjectByLetters(projectLetters);
-
-                            if (project && ticketId) {
-                                // не нравится мне эта хуйня
-                                // надо каким то образом обойти асинхронность, чтобы не было вероятности,
-                                // что одновременно два письма для одного тикета смогут переписать друг друга
-                                ticketModel.addMessageFromMail(project, ticketId, mailObject);
-                            }
-                        }
-                    });
+                    mailParser.on('end', processMailObject);
 
                     msg.on('body', function(stream, info) {
                         stream.on('data', function(chunk) {
@@ -374,4 +261,112 @@ function checkInbox(project) {
     });
 
     imap.connect();
+}
+
+/**
+ * Обработка пришедшего письма
+ * @param mailObject
+ */
+function processMailObject(mailObject) {
+    var ticketCode = parseSubject(mailObject.subject);
+    var project;
+
+    if (ticketCode) {
+        var codeParts      = ticketCode.split('-');
+        var projectLetters = codeParts[0];
+        var ticketId       = parseInt(codeParts[1], 10);
+        project            = projectModel.getProjectByLetters(projectLetters);
+
+        if (project && ticketId) {
+            // не нравится мне эта хуйня
+            // надо каким то образом обойти асинхронность, чтобы не было вероятности,
+            // что одновременно два письма для одного тикета смогут переписать друг друга
+            ticketModel.addMessageFromMail(project, ticketId, mailObject);
+        }
+
+    } else if (config.createTicketFromEmail && config.ticketFromEmailProject) {
+        project = projectModel.getProjectByLetters(config.ticketFromEmailProject);
+
+        if (!project) return;
+
+        // new ticket creation
+        var author = mailObject.from[0];
+        var email  = author.address;
+        var name   = author.name || author.address;
+        var title  = mailObject.subject || 'Новый тикет из почты';
+        var text   = mailObject.html;
+
+        if (text) {
+            text = text.replace(/<base[^>]*>/ig, '');
+        } else {
+            text = mailObject.text.replace(/\r?\n/g, '<br>');
+        }
+        text = striptags(text, global.config.tickets.editor.allowedTags);
+
+        if (!email || !name || !title || !text) return;
+
+        var ticket = new ticketModel.model({
+            opened: true,
+            lastDate: new Date(),
+            title: title,
+            project: project.code,
+            author: email,
+            messages: []
+        });
+
+        ticket.save(function(err, ticket) {
+            if (err) return;
+
+            ticket.number = projectModel.getBigUniqueNumber(ticket.autoCounter);
+
+            // Сохранение тикета
+            var message = new messageModel.model({
+                date: new Date(),
+                author: email,
+                text: text,
+                files: fileModel.proceedMailAttachments(project.code + '-' + ticket.number, mailObject.attachments)
+            });
+
+            ticket.messages = [message];
+            ticket.save();
+
+            // проверить/создать пользователя и отправить уведомление
+            userModel.createGetUser(email, name, function(err, user, pass) {
+                // Если передан пароль - пользователь создан
+                if (pass) {
+                    ticketModel.sendMailOnTicketAddUserCreate(project, ticket, pass);
+                } else {
+                    ticketModel.sendMailOnTicketAdd(project, ticket);
+                }
+
+                var result = {
+                    project: project.code,
+                    number: ticket.number
+                };
+
+                if (pass) {
+                    var token = jsonwebtoken.sign(email, global.config.socketIo.secret, {expiresIn: global.config.socketIo.expire * 60});
+
+                    result.user = {
+                        name: name,
+                        email: email
+                    };
+
+                    result.token        = token;
+                    result.countTickets = false;
+
+                    projectModel.getTicketCount(email, function(err, countTickets) {
+                        if (!err && countTickets) {
+                            result.countTickets = countTickets;
+                        }
+                    });
+                }
+
+                global.io.to(project.code).emit('newTicket', {
+                    ticket: ticket,
+                    source: project.responsible
+                });
+            });
+        });
+    }
 }

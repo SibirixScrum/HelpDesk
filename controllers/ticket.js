@@ -117,7 +117,7 @@ router.post('/add', cpUpload, function (req, res) {
     }
 
     if (!project) {
-        project = projectModel.getProjectByDomain(req.get('host'));
+        project = projectModel.getProjectByDomain(( req.get('host').match(/:/g) ) ? req.get('host').slice( 0, req.get('host').indexOf(":") ) : req.get('host'));
     }
 
     if (!project) {

@@ -1,14 +1,13 @@
 const extend = require('extend');
 const ActionTypes = require('../constants/action-types');
-
 const initialState = {
     modal: false,
     user: window.APP.user,
-    allowedProjects: window.APP.countTickets
+    allowedProjects: window.APP.countTickets,
+    tagsReference: window.APP.tagsReference
 };
 
 function root(state = initialState, action={type: ''}) {
-    console.log(action);
     switch (action.type) {
         case ActionTypes.UPDATE_COUNTERS:
             let allowedProject = extend({}, state.allowedProjects);

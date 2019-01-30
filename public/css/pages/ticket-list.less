@@ -273,6 +273,100 @@
             overflow-y: auto;
         }
 
+        .filter-tag-block {
+            float: right;
+            margin-right: 30px;
+            position: relative;
+            font: 13px/55px @font;
+            .title {
+                position: relative;
+                padding-right: 26px;
+                cursor: pointer;
+
+                &:after {
+                    .size(7px, 4px);
+                    .pseudo();
+                    right: 9px;
+                    top: 9px;
+                    display: block;
+                    background: data-uri('@{path-base64-images}arr.png');
+                }
+
+                &:hover {
+                    opacity: .75;
+                }
+            }
+            .dropdown {
+                width: 205px;
+                left: 50%;
+                transform: translateX(-50%);
+                right: auto;
+                .input-wrapper {
+                    margin: 0 20px;
+                    .icon {
+                        top: 17px;
+                    }
+                    input {
+                        width: 100%;
+                    }
+                }
+                a {
+                    &.selected {
+                        font-weight: bold;
+                    }
+                }
+            }
+        }
+
+        .filter-email-block {
+            float: right;
+            margin-right: 30px;
+            .input-wrapper {
+                input[type="text"] {
+                    width: 146px;
+                    &:focus {
+                        width: 266px;
+                    }
+                }
+            }
+        }
+
+        .input-wrapper {
+            position: relative;
+            input[type="text"] {
+                background: #f8f8f8;
+                border: 1px solid #cdcdcd;
+                border-radius: 20px;
+                padding: 5px 30px 5px 17px;
+                font: 13px/18px @font;
+                color: #343236;
+                width: 146px;
+                transition: all ease .2s;
+                text-overflow: ellipsis;
+                overflow: hidden;
+                box-sizing: border-box;
+                &:focus {
+                    outline: none;
+                    border-color: #ea2272;
+                    +.icon {
+                        background-image: data-uri('@{path-base64-images}search-active.png');
+                    }
+                }
+                &::-webkit-input-placeholder {
+                    color: #999;
+                    font-style: italic;
+                }
+            }
+            .icon {
+                display: block;
+                position: absolute;
+                right: 11px;
+                top: 19px;
+                .size(16px);
+                background: data-uri('@{path-base64-images}search.png') 0 0 no-repeat;
+            }
+        }
+
         /* Сортировка в средней колонке */
         .sort-block {
             float: right;
@@ -295,7 +389,23 @@
             .current {
                 position: relative;
                 padding-right: 26px;
+                padding-left: 10px;
                 cursor: pointer;
+
+                &:before {
+                    .size(4px, 10px);
+                    .pseudo();
+                    left: 0;
+                    top: 2px;
+                    background: data-uri('@{path-base64-images}arrow-up.png');
+                }
+
+                &.asc {
+                    &:before {
+                        transform: rotate(180deg);
+                        top: 3px;
+                    }
+                }
 
                 &:after {
                     .size(7px, 4px);
@@ -310,21 +420,21 @@
                     opacity: .75;
                 }
             }
+        }
 
-            .dropdown {
-                display: none;
-                position: absolute;
-                z-index: 50;
-                top: 54px;
-                right: 0;
-                box-shadow: 0 8px 13px rgba(0, 0, 0, .23);
-                line-height: 50px;
-                background-color: #fff;
-            }
+        .dropdown {
+            display: none;
+            position: absolute;
+            z-index: 50;
+            top: 54px;
+            right: 0;
+            box-shadow: 0 8px 13px rgba(0, 0, 0, .23);
+            line-height: 50px;
+            background-color: #fff;
 
             a {
                 display: block;
-                padding: 0 25px 0 20px;
+                padding: 0 25px;
                 text-decoration: none;
                 color: #000;
 
@@ -371,6 +481,7 @@
                 text-align: center;
                 background-color: inherit;
                 color: #fff;
+                font-size: 13px;
             }
 
             .subject {
@@ -608,6 +719,39 @@
             );
         }
 
+        .ticket-tags {
+            display: flex;
+            padding: 12px 20px 20px 30px;
+            .tag-list {
+                width: ~'calc(100% - 200px)';
+                box-sizing: border-box;
+                padding-top: 7px;
+                .tag-item {
+                    font: 13px/18px @font;
+                    color: #999;
+                    +.tag-item {
+                        &:before {
+                            content: ', ';
+                        }
+                    }
+                    .tag-del {
+                        font-size: 18px;
+                        font-style: normal;
+                        cursor: pointer;
+                        vertical-align: top;
+                        margin-left: 5px;
+                    }
+                    &:hover {
+                        color: #000;
+                    }
+                }
+            }
+            .tag-add {
+                width: 200px;
+                box-sizing: border-box;
+            }
+        }
+
         .icon-back {
             .size(60px, 55px);
             float: left;
@@ -642,7 +786,7 @@
         .ticket-messages {
             position: absolute;
             overflow-y: auto;
-            top: 56px;
+            top: 120px;
             bottom: 0;
             right: 0;
             left: 0;

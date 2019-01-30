@@ -12,6 +12,7 @@ var socket = null;
 function connectIO(user, dispatch) {
     if (null === socket) {
         var origin = window.location.origin || `http://${window.location}`;
+        var https = document.location.protocol === 'https:';
         socket     = io.connect(origin.replace(/:\d+$/, '') + ':' + APP.port, {'forceNew': true});
 
         socket.on('connect', function() {
@@ -59,6 +60,8 @@ function connectIO(user, dispatch) {
                     "\".", false, notifyOnClick(params.ticket));
                 }
 
+                dispatch(TicketActions.updateTicket(params.ticket));
+            }).on('ticketChange', function(params) {
                 dispatch(TicketActions.updateTicket(params.ticket));
             });
     }

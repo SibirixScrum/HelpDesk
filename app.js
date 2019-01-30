@@ -3,6 +3,7 @@ var bodyParser   = require('body-parser');
 var cookieParser = require('cookie-parser');
 var express      = require('express');
 var favicon      = require('serve-favicon');
+var fs           = require('fs');
 var http         = require('http');
 var https        = require('https');
 var logger       = require('morgan');
@@ -28,20 +29,20 @@ global.config = config = extend(true, configExample, config, {
     get: function(name, def) {
         var namePath = name.split('.');
         var result = this;
-    
+
         namePath.forEach(function(key){
             if (undefined === result) {
                 return false;
             }
-    
+
             result = result[key];
             return true;
         });
-    
+
         if (undefined === result) {
             return def;
         }
-    
+
         return result;
     }
 });
@@ -121,7 +122,16 @@ models.setCallback(function() {
         }
     });
 
-    var httpServer = http.createServer(app);
+    var httpServer;
+
+    if (config.ssl && config.ssl.enabled) {
+        var privateKey = fs.readFileSync(config.ssl.key);
+        var certificate = fs.readFileSync(config.ssl.cert);
+        var credentials = {key: privateKey, cert: certificate};
+        httpServer = https.createServer(credentials, app);
+    } else {
+        httpServer = http.createServer(app);
+    }
 
     var io = socketIo.listen(httpServer);
     io.sockets

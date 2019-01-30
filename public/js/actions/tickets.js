@@ -1,6 +1,7 @@
 const ActionTypes = require('../constants/action-types');
 
 const request = require('superagent');
+const _ = require('underscore');
 
 function addTicket(ticket) {
     return {
@@ -30,16 +31,18 @@ function setState(filter) {
     };
 }
 
-function setFilter(filter) {
+function setFilter(sort, filter) {
     return {
         type: ActionTypes.SET_FILTER,
+        sort,
         filter
     };
 }
 
-function beforeFetchItems(filter) {
+function beforeFetchItems(sort, filter) {
     return {
         type: ActionTypes.START_FETCH_ITEMS,
+        sort,
         filter,
         isLoading: true
     };
@@ -54,19 +57,62 @@ function afterFetchItems(items, clear) {
     };
 }
 
-function fetchItems(offset, sortType, state, projects, clear = true) {
+function tagAdd(projectCode, ticketNumber, tag) {
     return dispatch => {
-        dispatch(beforeFetchItems({sort: sortType, state, projects}));
+        request.post('/ticket/tag-add/')
+            .set('Accept', 'application/json')
+            .type('json')
+            .send({
+                projectCode: projectCode,
+                number: ticketNumber,
+                tag: tag
+            })
+            .query({
+                nocache: Date.now()
+            })
+            .end(function(err, resp) {
+
+            });
+    }
+}
+
+function tagRemove(projectCode, ticketNumber, index) {
+    return dispatch => {
+        request.post('/ticket/tag-remove/')
+            .set('Accept', 'application/json')
+            .type('json')
+            .send({
+                projectCode: projectCode,
+                number: ticketNumber,
+                index: index
+            })
+            .query({
+                nocache: Date.now()
+            })
+            .end(function(err, resp) {
+
+            });
+    }
+}
+
+function fetchItems(offset, sortType, filter, clear = true) {
+    return dispatch => {
+        dispatch(beforeFetchItems(sortType, filter));
+
+        var query = {
+                     offset,
+            //filter:  JSON.stringify(filter),
+            sort:    sortType,
+            nocache: Date.now()
+        };
+
+        Object.keys(filter).map(field => {
+            query[field] = _.isArray(filter[field]) ? filter[field].join(',') : filter[field];
+        });
 
         request.get('/ticket/list/')
             .set('Accept', 'application/json')
-            .query({
-                offset,
-                state,
-                projects: projects.join(','),
-                sort: sortType,
-                nocache: Date.now()
-            })
+            .query(query)
             .end(function(err, resp) {
                 const answer = JSON.parse(resp.text);
                 dispatch(afterFetchItems(answer.list, clear))
@@ -81,11 +127,17 @@ function toggleProject(code) {
     };
 }
 
-
 function setTicketListSort(sort) {
     return {
         type: ActionTypes.SET_TICKET_LIST_SORT,
         sort
+    };
+}
+
+function setTicketListFilter(filter) {
+    return {
+        type: ActionTypes.SET_TICKET_LIST_FILTER,
+        filter
     };
 }
 
@@ -141,20 +193,23 @@ function resetState() {
 }
 
 module.exports = {
-    setState, 
-    beforeFetchItems, 
+    setState,
+    beforeFetchItems,
     afterFetchItems,
     beforeOpenDetail,
     afterOpenDetail,
-    fetchItems, 
+    fetchItems,
     toggleProject,
     activeProjects,
     setTicketListSort,
+    setTicketListFilter,
     setDetailTicket,
     loadMore,
     updateTicket,
     resetState,
     addTicket,
     closeDetail,
-    setFilter
+    setFilter,
+    tagAdd,
+    tagRemove
 };

@@ -192,10 +192,11 @@ exports.getTicketCount = function(email, callback) {
  * Получить проект по его коду
  * @returns {*}
  */
-exports.getAll = function() {
+exports.getAll = function(user) {
     return projectsList.map(function(project){
 
         var pr = extend({}, project);
+        pr.canSupport = user && pr.responsible == user.email;
         delete pr.responsible;
         delete pr.email;
 

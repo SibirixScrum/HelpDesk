@@ -8,7 +8,8 @@
         files: <%- JSON.stringify(global.config.files) %>,
         allowedTags: <%- JSON.stringify(global.config.tickets.editor.allowedTags.replace(/<(\w*)>/g, "$1,")) %>,
         port: <%- global.config.port %>,
-        markDateRed: <%- global.config.markDateRed ? global.config.markDateRed : false %>
+        markDateRed: <%- global.config.markDateRed ? global.config.markDateRed : false %>,
+        tagsReference: <%- JSON.stringify(tagsReference) %>
     };
 </script>
 

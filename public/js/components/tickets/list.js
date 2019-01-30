@@ -21,7 +21,12 @@ const TicketsList = React.createClass({
 
         return (
             <div className={`column tickets-list-column ${loading}`}>
-                <TicketsListHeader togglePopup={this.togglePopup} onSortChange={this.props.onSortChange} curSort={this.props.tickets.sort}/>
+                <TicketsListHeader togglePopup={this.togglePopup}
+                                   onSortChange={this.props.onSortChange}
+                                   onFilterChange={this.props.onFilterChange}
+                                   filter={this.props.tickets.filter}
+                                   tagsReference={this.props.tagsReference}
+                                   curSort={this.props.tickets.sort}/>
 
                 <div id="add-ticket-popup" className={this.state.isPopup ? 'add-ticket-popup add-ticket-page vis' : 'add-ticket-popup add-ticket-page'}>
                     <AddTicket closePopup={this.closePopup} user={this.props.user} isPopup={this.state.isPopup} projects={this.props.projects} />

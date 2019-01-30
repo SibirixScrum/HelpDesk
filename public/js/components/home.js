@@ -23,7 +23,9 @@ if (0 !== APP.projects.length) {
 }
 
 if (project && 0 !== project.files.length) {
-    docs = <div className="documents">
+    let className = 'documents';
+    className += project.filesPos == 'right' ? ' to-right' : '';
+    docs = <div className={className}>
         {project.files.map(function(file, key) {
             return <a className="doc" key={key} target="_blank" href={file.path}>{file.name}</a>;
         })}
@@ -100,9 +102,11 @@ const Home = React.createClass({
 
                 <h2>{project.title}</h2>
 
-                {form}
+                <div className="form-wrapper">
+                    {form}
 
-                {docs}
+                    {docs}
+                </div>
             </div>
         )
     }

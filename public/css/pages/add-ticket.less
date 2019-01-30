@@ -6,6 +6,7 @@
         -ms-flex-pack: center;
         align-items: center;
         flex-direction: column;
+        box-sizing: border-box;
         padding: 30px 0;
         color: #fff;
     }
@@ -49,6 +50,14 @@
         margin: 0 0 40px;
         font: 13px/30px @font;
         text-transform: uppercase;
+    }
+
+    .vacation {
+        border: 1px solid #fff;
+        margin: -30px 0 40px;
+        padding: 20px;
+        font-size: 12px;
+        line-height: 16px;
     }
 
     .form {
@@ -170,6 +179,27 @@
             }
         }
 
+        .eula {
+            span {
+                display: inline;
+            }
+            .error-text {
+                display: none;
+            }
+            &.error {
+                .error-text {
+                    display: block;
+                }
+            }
+            input {
+                margin-right: 10px;
+                vertical-align: middle;
+            }
+            a {
+                font: 13px/28px Roboto,sans-serif;
+            }
+        }
+
         .row-submit {
             .clearfix();
             display: inline-block;
@@ -242,6 +272,31 @@
 
     .documents {
         font-size: 0;
+        text-align: center;
+
+        &.to-right {
+            position: absolute;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            margin: auto;
+            height: 166px;
+            left: 0;
+            width: 200px;
+            transform: translateX(450px);
+            .doc {
+                margin: 0 0 20px;
+            }
+            @media (max-width: 1100px) {
+                position: static;
+                width: auto;
+                height: auto;
+                transform: none;
+                .doc {
+                    margin: 0 20px 0;
+                }
+            }
+        }
 
         .doc {
             position: relative;
@@ -254,6 +309,8 @@
             text-decoration: none;
             font: 14px/22px @font;
             color: #9d9d9d;
+
+            text-align: left;
 
             &:before {
                 .pseudo();

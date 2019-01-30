@@ -21,7 +21,7 @@ const Message = React.createClass({
     render() {
         const message = this.props.message;
         if (!message.text) {
-            console.log(message);
+
         } else {
             message.text = message.text.replace(/<base[^>]*>/ig, '');
         }

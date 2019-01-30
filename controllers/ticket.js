@@ -26,6 +26,8 @@ router.get('/list', function(req, res) {
     var sort = req.query.sort ? req.query.sort : 'date asc';
     var state = req.query.state ? req.query.state : 'SHOW_ALL';
     var projectsFilter = (req.query.projects !== undefined) ? req.query.projects.split(',') : false;
+    var emailFilter = req.query.email ? req.query.email : false;
+    var tagsFilter = req.query.tags ? req.query.tags.split(',') : false;
 
     var projectList = projectModel.getResponsibleProjectsList(userEmail);
 
@@ -35,6 +37,14 @@ router.get('/list', function(req, res) {
         filter = { project: { $in: projectCodes } };
     } else {
         filter = { author: userEmail };
+    }
+
+    if (emailFilter && !filter.author) {
+        filter.author = new RegExp('^.*' + emailFilter + '.*$', 'i');
+    }
+
+    if (tagsFilter && tagsFilter.length) {
+        filter.tags = { $in: tagsFilter };
     }
 
     if (state == 'SHOW_CLOSED') {
@@ -145,6 +155,7 @@ router.post('/add', cpUpload, function (req, res) {
     var ticket = new ticketModel.model({
         opened: true,
         lastDate: new Date(),
+        authorName: name,
         title: title,
         project: project.code,
         author: email,
@@ -294,6 +305,85 @@ router.post('/open', function (req, res) {
 
             res.json({ result: true });
 
+        } else {
+            res.json({ result: false, error: 'no rights' });
+        }
+    });
+});
+
+router.post('/tag-add', function(req, res) {
+    var projectCode = req.body.projectCode;
+    var number = req.body.number;
+    var tag = req.body.tag;
+
+    if (!req.session.user) {
+        res.json({ result: false, error: 'no auth' });
+        return;
+    }
+
+    if (!tag) {
+        res.json({result: false, error: 'no tag'});
+        return;
+    }
+
+    ticketModel.findTicket(projectCode, number, function(err, ticket) {
+        if (err) {
+            res.json({result: false, error: 'no ticket'});
+            return;
+        }
+
+        if (ticketModel.hasRightToSupport(ticket, req.session.user)) {
+            if (!ticket.tags) {
+                ticket.tags = [];
+            }
+
+            ticket.tags.push(tag);
+            ticket.save();
+
+            // Отправить ПУШ-оповещение
+            ticketModel.prepareTicketsForClient([ticket], function(err, data) {
+                var ticket = data[0];
+                global.io.to(projectCode).emit('ticketChange', { ticket: ticket, source: req.session.user ? req.session.user.email : false });
+                res.json({ result: true, ticket: ticket });
+            });
+        } else {
+            res.json({ result: false, error: 'no rights' });
+        }
+    });
+});
+
+router.post('/tag-remove', function(req, res) {
+    var projectCode = req.body.projectCode;
+    var number      = req.body.number;
+    var index       = parseInt(req.body.index, 10);
+
+    if (!req.session.user) {
+        res.json({result: false, error: 'no auth'});
+        return;
+    }
+
+    if (isNaN(index)) {
+        res.json({result: false, error: 'no tag'});
+        return;
+    }
+
+    ticketModel.findTicket(projectCode, number, function(err, ticket) {
+        if (err) {
+            res.json({result: false, error: 'no ticket'});
+            return;
+        }
+
+        if (ticketModel.hasRightToSupport(ticket, req.session.user)) {
+            ticket.tags.splice(index, 1);
+            ticket.save();
+
+            // Отправить ПУШ-оповещение
+            ticketModel.prepareTicketsForClient([ticket], function(err, data) {
+                var ticket = data[0];
+                global.io.to(projectCode).emit('ticketChange', { ticket: ticket, source: req.session.user ? req.session.user.email : false });
+            });
+
+            res.json({ result: true });
         } else {
             res.json({ result: false, error: 'no rights' });
         }

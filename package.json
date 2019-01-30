@@ -28,6 +28,7 @@
     "react-dropzone": "2.0.1",
     "react-redux": "~2.1.0",
     "react-router": "0.13.3",
+    "react-select": "0.6.12",
     "redux": "2.0.0",
     "redux-thunk": "0.1.0",
     "serve-favicon": "*",
@@ -36,7 +37,7 @@
     "socketio-jwt": "4.3.1",
     "striptags": "2.0.3",
     "superagent": "*",
-    "underscore": "1.8.3"
+    "underscore": "^1.8.3"
   },
   "devDependencies": {
     "babelify": "^6.3.0",

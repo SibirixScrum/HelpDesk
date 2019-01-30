@@ -21,13 +21,15 @@ const AddForm = React.createClass({
                 name: this.props.user && this.props.user.name ? this.props.user.name : '',
                 email: this.props.user && this.props.user.email ? this.props.user.email : '',
                 title: '',
-                text: ''
+                text: '',
+                agreement: ''
             },
             errors: {
                 name: {empty: false},
                 email: {empty: false, emailInvalid: false},
                 title: {empty: false},
-                text: {empty: false}
+                text: {empty: false},
+                agreement: {empty: false}
             },
             files: []
         };
@@ -243,6 +245,17 @@ const AddForm = React.createClass({
                         <span>Описание проблемы</span>
                         <textarea id="text" ref="text" name="text"></textarea>
                         <span className="error-text">Необходимо описать проблему</span>
+                    </label>
+                </div>
+                <div className="row">
+                    <label className={"eula " + this.getClassName('agreement')}>
+                        <input type="checkbox"
+                               name="agreement"
+                               value={this.state.form.agreement}
+                               onChange={() => onFieldChange('agreement')}
+                               ref="agreement" />
+                        Я согласен на <a href="/agreement/" target="_blank">обработку</a> персональных данных
+                        <span className="error-text">Необходимо дать свое согласие на обработку персональных данных</span>
                     </label>
                 </div>
                 <div className="row-submit clearfix">

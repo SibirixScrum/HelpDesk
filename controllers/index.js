@@ -2,16 +2,19 @@ var express = require('express');
 var router = express.Router();
 
 var models = require('../models/');
-var projects = models.project.getAll();
 
 function renderHome(req, res, countTickets) {
-    res.render('index', {
-        title: 'Helpdesk',
-        files: global.config.files,
-        passChanged: req.body.passChanged,
-        user: req.session.user ? req.session.user : false,
-        countTickets: countTickets,
-        projects: projects
+    var projects = models.project.getAll(req.session.user);
+    models.ticket.getTagsReference(function(tags) {
+        res.render('index', {
+            title:        'Helpdesk',
+            files:        global.config.files,
+            passChanged:  req.body.passChanged,
+            user:         req.session.user ? req.session.user : false,
+            countTickets: countTickets,
+            projects:     projects,
+            tagsReference: tags
+        });
     });
 }
 
@@ -23,6 +26,10 @@ router.get('/tickets', function (req, res) {
     } else {
         res.redirect('/');
     }
+});
+
+router.get('/agreement/', function (req, res) {
+    res.render('agreement');
 });
 
 /* GET home page. */

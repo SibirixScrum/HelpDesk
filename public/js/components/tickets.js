@@ -10,6 +10,7 @@ const React          = require('react');
 const Router         = require('react-router');
 const TicketsActions = require('../actions').tickets;
 const RootActions    = require('../actions').root;
+const _ = require('underscore');
 
 const Tickets = React.createClass({
     mixins: [Router.Navigation],
@@ -31,14 +32,21 @@ const Tickets = React.createClass({
             return;
         }
 
+        var currentFilter = Object.assign({}, tickets.filter);
         const sort           = query.sort ? query.sort : tickets.sort;
-        const state          = query.state ? query.state : tickets.state;
-        const activeProjects = query.projects ? query.projects.split('-') : tickets.activeProjects;
+        const state          = query.state ? query.state : currentFilter.state;
+        const projects = query.projects ? query.projects.split('-') : currentFilter.projects;
+        const email = query.email ? query.email : currentFilter.email;
+        const tags = query.tags ? query.tags.split('-') : currentFilter.tags;
 
-        let fromUrl = false;
-        if (sort !== tickets.sort) fromUrl = true;
-        if (state !== tickets.state) fromUrl = true;
-        if (!_isSameArrays(activeProjects, tickets.activeProjects)) fromUrl = true;
+        var filter = {
+            tags,
+            email,
+            state,
+            projects
+        };
+
+        let fromUrl = !_.isEqual(filter, currentFilter);
 
         if (params.id) {
             const project = params.id.split('-')[0];
@@ -47,38 +55,46 @@ const Tickets = React.createClass({
         }
 
         if (fromUrl) {
-            setFilter({sort, activeProjects, state});
+            setFilter(sort, filter);
 
             return;
         }
 
-        fetchItems(0, sort, state, activeProjects);
+        fetchItems(0, sort, filter);
     },
 
     componentWillReceiveProps(nextProps) {
         const { tickets, params, fetchItems } = nextProps;
 
+        var filter = Object.assign({}, tickets.filter);
         if (this._shouldFetchItems(this.props, nextProps)) {
-            fetchItems(0, tickets.sort, tickets.state, tickets.activeProjects);
+            fetchItems(0, tickets.sort, filter);
         }
 
         if (tickets.detailedOpened !== false &&
             (!params.id || params.id !== this._getTicketId(tickets.detailedOpened))) {
             if (!isIE9) {
                 this.transitionTo('ticketsDetail', {id: this._getTicketId(tickets.detailedOpened)}, {
-                    state: tickets.state,
-                    projects: tickets.activeProjects.join('-'),
+                    state: filter.state,
+                    projects: filter.projects.join('-'),
                     sort: tickets.sort
                 });
             }
         } else {
             if (tickets.detailedOpened === false) {
                 if (!isIE9) {
-                    this.transitionTo('tickets', {}, {
-                        state: tickets.state,
-                        projects: tickets.activeProjects.join('-'),
+                    var transitionParams = {
+                        state: filter.state,
+                        projects: filter.projects.join('-'),
                         sort: tickets.sort
-                    });
+                    };
+                    if (filter.email) {
+                        transitionParams.email = filter.email;
+                    }
+                    if (filter.tags && filter.tags.length) {
+                        transitionParams.tags = filter.tags.join('-');
+                    }
+                    this.transitionTo('tickets', {}, transitionParams);
                 }
             }
         }
@@ -86,13 +102,10 @@ const Tickets = React.createClass({
 
     _shouldFetchItems(props, nextProps) {
         let shouldFetchItems = false;
-        let isSameProjects   = _isSameArrays(props.tickets.activeProjects, nextProps.tickets.activeProjects);
 
         if (props.tickets.sort !== nextProps.tickets.sort) {
             shouldFetchItems = true;
-        } else if (props.tickets.state !== nextProps.tickets.state) {
-            shouldFetchItems = true;
-        } else if (!isSameProjects) {
+        } else if (!_.isEqual(props.tickets.filter, nextProps.tickets.filter)) {
             shouldFetchItems = true;
         }
 
@@ -106,7 +119,7 @@ const Tickets = React.createClass({
 
     loadMore() {
         const {tickets, fetchItems} = this.props;
-        fetchItems(tickets.items.length, tickets.sort, tickets.state, tickets.activeProjects, false);
+        fetchItems(tickets.items.length, tickets.sort, Object.assign({}, tickets.filter), false);
     },
 
     setTicketState(flag, project, number) {
@@ -146,21 +159,28 @@ const Tickets = React.createClass({
                     onToggleProject={this.props.toggleProject}
                     onLogout={this.onLogout}
                     />
-                <TicketsList tickets={tickets}
+                <TicketsList tickets={Object.assign({}, tickets)}
                              user={user}
                              closeDetail={this.props.closeDetail}
                              projects={allowedProjects}
                              onSortChange={this.props.setTicketListSort}
+                             onFilterChange={this.props.setTicketListFilter}
                              openDetail={this.props.setDetailTicket}
                              loadMore={this.loadMore}
+                             tagsReference={this.props.tagsReference}
                     />
                 <TicketsDetail isDetailLoading={tickets.isDetailLoading}
                                showModal={this.props.showModal}
                                setTicketState={this.setTicketState}
                                closePanel={this.props.closeDetail}
                                opened={tickets.detailedOpened}
+                               user={user}
                                isBtnDisabled={this.state.isBtnDisabled}
-                               tickets={tickets.items}/>
+                               tickets={tickets.items}
+                               tagsReference={this.props.tagsReference}
+                               tagAdd={this.props.tagAdd}
+                               tagRemove={this.props.tagRemove}
+                />
             </div>
         )
     }
@@ -169,22 +189,26 @@ const Tickets = React.createClass({
 function select(state) {
     return {
         user: state.root.user,
-        tickets: state.tickets,
-        allowedProjects: state.root.allowedProjects
+        tickets: Object.assign({}, state.tickets),
+        allowedProjects: state.root.allowedProjects,
+        tagsReference: state.root.tagsReference
     }
 }
 
 function mapDispatchToProps(dispatch) {
     return {
         setDetailTicket: (ticket) => dispatch(TicketsActions.setDetailTicket(ticket)),
-        fetchItems: (offset, sort, state, activeProjects, clear) => dispatch(TicketsActions.fetchItems(offset, sort, state, activeProjects, clear)),
-        setFilter: (filter) => dispatch(TicketsActions.setFilter(filter)),
+        fetchItems: (offset, sort, filter, clear) => dispatch(TicketsActions.fetchItems(offset, sort, filter, clear)),
+        setFilter: (sort, filter) => dispatch(TicketsActions.setFilter(sort, filter)),
         logoutSuccess: () => dispatch(RootActions.logoutSuccess()),
         toggleProject: (code) => dispatch(TicketsActions.toggleProject(code)),
         setState: (filter) => dispatch(TicketsActions.setState(filter)),
         setTicketListSort: (sortType) => dispatch(TicketsActions.setTicketListSort(sortType)),
+        setTicketListFilter: (filter) => dispatch(TicketsActions.setTicketListFilter(filter)),
         closeDetail: (sortType) => dispatch(TicketsActions.closeDetail()),
-        showModal: (content) => dispatch(RootActions.showModal(content))
+        showModal: (content) => dispatch(RootActions.showModal(content)),
+        tagAdd: (projectCode, ticketNumber, tag) => dispatch(TicketsActions.tagAdd(projectCode, ticketNumber, tag)),
+        tagRemove: (projectCode, ticketNumber, index) => dispatch(TicketsActions.tagRemove(projectCode, ticketNumber, index))
     }
 }
 

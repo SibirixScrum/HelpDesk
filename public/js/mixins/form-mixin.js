@@ -13,7 +13,11 @@ module.exports = {
         for (let field in fields) {
             if (fields.hasOwnProperty(field)) {
                 let value = fields[field];
-                if (!value.trim()) {
+                if (value.trim) {
+                    value = value.trim();
+                }
+
+                if (!value) {
                     isValid             = false;
                     errors[field].empty = true;
 
@@ -41,7 +45,7 @@ module.exports = {
 
     onFieldChange(field) {
         let state    = {};
-        let val      = field === 'text' ? this.tiny.getContent() : this.refs[field].getDOMNode().value;
+        let val      = field === 'text' ? this.tiny.getContent() : (field === 'agreement' ? this.refs[field].getDOMNode().checked : this.refs[field].getDOMNode().value);
         let errors   = this.state.errors;
         state[field] = field === 'email' ? val.toLowerCase() : val;
 

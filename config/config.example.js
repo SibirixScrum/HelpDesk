@@ -60,7 +60,8 @@ exports.projects = [
                 name: '',
                 path: ''
             },*/
-        ]
+        ],
+        filesPos: 'right' // show project files on right or bottom of ticket form
     }/*
     , {
         code: 'PROJECT2',
@@ -81,7 +82,8 @@ exports.files = {
     maxCount: 10,
     extensions: [
         'jpg', 'jpeg', 'gif', 'png', 'bmp', // images
-        'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'ods', 'odt', 'txt' // Documents
+        'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'ods', 'odt', 'txt', // Documents
+        'rar', 'zip', '7z', 'tgz', 'gz', 'bz2' // archives
     ]
 };
 
@@ -98,3 +100,9 @@ exports.tickets = {
 exports.createTicketFromEmail = true;
 // Default project to add new tickets created from emails
 exports.ticketFromEmailProject = 'HD';
+
+exports.ssl = {
+    enabled: false,
+    cert: __dirname + '/ssl/server.key',
+    key: __dirname + '/ssl/server.crt',
+};

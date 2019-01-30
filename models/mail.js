@@ -151,11 +151,9 @@ exports.sendMail = function(to, subject, text, isHtml, project, attachments) {
     };
 
     if (isHtml) {
-        text += '<br>\n<br>\n------------<br>\n' + project.email.sign;
-        mailOptions.html = text;
+        mailOptions.html = text + '<br>\n<br>\n------------<br>\n' + project.email.sign;
     } else {
-        text += '\n\n------------\n' + project.email.sign;
-        mailOptions.text = text;
+        mailOptions.text = text + '\n\n------------\n' + project.email.sign;
     }
 
     if (attachments && attachments.length) {
@@ -164,7 +162,23 @@ exports.sendMail = function(to, subject, text, isHtml, project, attachments) {
 
     transporter.sendMail(mailOptions, function(error, info) {
         if (error) {
-            return console.log('Message dont send', error);
+            if (attachments && attachments.length) {
+                console.log('Message dont send, try to exclude attachments', error);
+
+                var addText = 'В ОТВЕТЕ БЫЛИ ПРИКРЕПЛЕНЫ ФАЙЛЫ, ПРОСМОТРЕТЬ ИХ ВЫ СМОЖЕТЕ НА ПОРТАЛЕ HELPDESK';
+                if (isHtml) {
+                    text += '<br>\n<br>\n------------<br>\n ' + addText;
+                    mailOptions.html = text;
+                } else {
+                    text += '\n\n------------\n' + addText;
+                    mailOptions.text = text;
+                }
+
+                exports.sendMail(to, subject, text, isHtml, project);
+            } else {
+                console.log('Message dont send', error);
+            }
+            return;
         }
 
         console.log('Message sent: ' + info.response);
@@ -271,11 +285,15 @@ function processMailObject(mailObject) {
     var ticketCode = parseSubject(mailObject.subject);
     var project;
 
+    console.log(new Date() + ': new mail message, subject: ' + mailObject.subject + ', ticket code: ' + ticketCode);
+
     if (ticketCode) {
         var codeParts      = ticketCode.split('-');
         var projectLetters = codeParts[0];
         var ticketId       = parseInt(codeParts[1], 10);
         project            = projectModel.getProjectByLetters(projectLetters);
+
+        console.log(new Date() + ': new mail message, project letters: ' + projectLetters + ', ticket id: ' + ticketId + ', project: ' + project.code);
 
         if (project && ticketId) {
             // не нравится мне эта хуйня

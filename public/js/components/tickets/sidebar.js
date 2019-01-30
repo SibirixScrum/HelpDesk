@@ -24,8 +24,8 @@ const TicketsSidebar = React.createClass({
         return (
             <div className="column sidebar">
                 <div className="column-title"><a onClick={this.doLogout}  className="logout">{this.props.user.email}</a></div>
-                <Folders tickets={this.props.tickets} allowedProjects={this.props.allowedProjects} onStateClick={this.props.onStateClick} activeProjects={this.props.tickets.activeProjects} />
-                <Projects allowedProjects={this.props.allowedProjects} activeProjects={this.props.tickets.activeProjects} onToggleProject={this.props.onToggleProject}/>
+                <Folders tickets={this.props.tickets} allowedProjects={this.props.allowedProjects} onStateClick={this.props.onStateClick} activeProjects={this.props.tickets.filter.projects} />
+                <Projects allowedProjects={this.props.allowedProjects} activeProjects={this.props.tickets.filter.projects} onToggleProject={this.props.onToggleProject}/>
                 <Copyright />
             </div>
         )

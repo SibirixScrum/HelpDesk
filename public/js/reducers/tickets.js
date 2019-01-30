@@ -5,9 +5,13 @@ const VisibilityFilters = require('../constants/folder-type');
 const initialTickets = {
     isDetailLoading: false,
     isLoading: false,
-    state: VisibilityFilters.SHOW_OPENED,
-    activeProjects: (false === APP.countTickets) ? [] : Object.keys(APP.countTickets),
     sort: 'date asc',
+    filter: {
+        tags: [],
+        email: '',
+        state: VisibilityFilters.SHOW_OPENED,
+        projects: (false === APP.countTickets) ? [] : Object.keys(APP.countTickets)
+    },
     page: 1,
     detailedOpened: false,
     stateCount: {opened: 0, closed: 0},
@@ -16,7 +20,7 @@ const initialTickets = {
 };
 
 function tickedIsShowed(state, ticket) {
-    switch (state.state) {
+    switch (state.filter.state) {
         case VisibilityFilters.SHOW_OPENED:
             if (false === ticket.opened) {
                 return false;
@@ -31,7 +35,7 @@ function tickedIsShowed(state, ticket) {
             break;
     }
 
-    return (-1 !== state.activeProjects.indexOf(ticket.project));
+    return (-1 !== state.filter.projects.indexOf(ticket.project));
 }
 
 function ticketsBy(sort) {
@@ -65,23 +69,23 @@ function ticketsBy(sort) {
 }
 
 function tickets(state = initialTickets, action = {type: ''}) {
-    let ticket, newState
+    let ticket, newState;
     switch (action.type) {
         case ActionTypes.RESET_TICKETS_STATE:
-            return extend({}, initialTickets, {activeProjects: []});
+            return extend({}, initialTickets, {filter: {projects: []}});
 
         case ActionTypes.SET_STATE:
-            newState = extend({}, state, {state: action.filter, detailedOpened: false});
+            newState = extend({}, state, {filter: extend({}, state.filter, { state: action.filter }), detailedOpened: false});
 
             return newState;
 
         case ActionTypes.SET_FILTER:
-            newState = extend({}, state, action.filter);
+            newState = extend({}, state, {filter: extend({}, state.filter, action.filter), sort: action.sort});
 
             return newState;
 
         case ActionTypes.START_FETCH_ITEMS:
-            return extend({}, state, {isLoading: true, state: action.state, sort: action.sort, activeProjects: action.projects});
+            return extend({}, state, {isLoading: true, sort: action.sort, filter: extend({}, state.filter, action.filter)});
 
         case ActionTypes.END_FETCH_ITEMS:
             let resultItems = state.items;
@@ -114,7 +118,7 @@ function tickets(state = initialTickets, action = {type: ''}) {
             return extend({}, state, {page: (state.page + 1)});
 
         case ActionTypes.SET_ACTIVE_PROJECTS:
-            return extend({}, state, {activeProjects: Object.keys(action.projects), detailedOpened: false});
+            return extend({}, state, {filter: extend({}, state.filter, {projects: Object.keys(action.projects)}), detailedOpened: false});
 
         case ActionTypes.UPDATE_TICKET:
             let oldTickets = state.items.filter((ticket) =>
@@ -162,19 +166,22 @@ function tickets(state = initialTickets, action = {type: ''}) {
             return state;
 
         case ActionTypes.TOGGLE_PROJECT:
-            var activeProjects = state.activeProjects.slice(0);
+            var projects = state.filter.projects.slice(0);
 
-            var indexProjectCode = activeProjects.indexOf(action.code);
+            var indexProjectCode = projects.indexOf(action.code);
             if (-1 === indexProjectCode) {
-                activeProjects.push(action.code);
+                projects.push(action.code);
             } else {
-                activeProjects.splice(indexProjectCode,1);
+                projects.splice(indexProjectCode,1);
             }
 
-            return extend({}, state, {activeProjects: activeProjects, detailedOpened: false});
+            return extend({}, state, {filter: extend({}, state.filter, {projects}), detailedOpened: false});
 
         case ActionTypes.SET_TICKET_LIST_SORT:
-            return extend({}, state, {sort: action.sort});
+            return extend({}, state, { sort: action.sort});
+
+        case ActionTypes.SET_TICKET_LIST_FILTER:
+            return extend({}, state, {filter: extend({}, state.filter, action.filter)});
 
         default:
             return state;

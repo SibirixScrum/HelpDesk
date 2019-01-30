@@ -39,7 +39,7 @@ const Login = React.createClass({
             this.refs.email.getDOMNode().focus();
         }
     },
-    
+
     componentDidUpdate(prevProps, prevState) {
         if (prevState.isReset !== this.state.isReset) React.findDOMNode(this.refs.email).focus();
     },

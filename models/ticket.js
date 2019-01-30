@@ -4,6 +4,7 @@
 
 var mongoose = require('mongoose');
 var collectionName = 'ticket';
+var striptags    = require('striptags');
 var messageModel = require('./message');
 var projectModel = require('./project');
 var mailModel = require('./mail');
@@ -21,6 +22,8 @@ var ticketSchema = new mongoose.Schema({
     autoCounter: Number, // Номер тикета
     number:   Number,   // Номер тикета
     author:   String,   // привязка к пользователю - по емейлу
+    authorName: String,   // Имя
+    tags: [String],
     messages: [messageModel.scheme]  // Массив сообщений в тикете
 });
 
@@ -29,6 +32,37 @@ ticketSchema.plugin(autoIncrement.plugin, { model: collectionName, field: 'autoC
 var pageSize = global.config.get('tickets.page.limit', 1000);
 exports.scheme = ticketSchema;
 exports.model  = mongoose.model(collectionName, ticketSchema);
+
+exports.getTagsReference = function(cb) {
+    var countByTag = {}, result = [];
+    this.model.find({}, {tags: true}, function(err, tickets) {
+        if (err) {
+            cb([]);
+            return;
+        }
+
+        tickets.map(function(ticket) {
+            if (ticket.tags) {
+                ticket.tags.map(function(tag) {
+                    if (!countByTag[tag]) {
+                        countByTag[tag] = 0;
+                    }
+
+                    countByTag[tag]++;
+                });
+            }
+        });
+
+        Object.keys(countByTag).map(function(tag) {
+            result.push({ tag: tag, count: countByTag[tag] });
+        });
+
+        cb(result.sort(function(a, b) {
+            var field = a.count == b.count ? 'tag' : 'count';
+            return a[field] < b[field] ? 1 : (a[field] > b[field] ? -1 : 0);
+        }).map(function(tag) { return tag.tag; }));
+    });
+};
 
 /**
  * Проверка прав доступа на тикет. Изменять может открывший и ТП (добавить сообщение, открыть, закрыть)
@@ -55,6 +89,25 @@ exports.hasRightToWrite = function(ticket, user) {
 };
 
 /**
+ * Проверка прав доступа как сотрудника на тикет
+ * @param ticket
+ * @param user
+ * @returns {boolean}
+ */
+exports.hasRightToSupport = function(ticket, user) {
+    if (!user) return false;
+
+    var projects = projectModel.getResponsibleProjectsList(user.email);
+    for (var i = 0; i < projects.length; i++) {
+        if (projects[i].code == ticket.project) {
+            return true;
+        }
+    }
+
+    return false;
+};
+
+/**
  *
  * @param project
  * @param number
@@ -71,23 +124,37 @@ exports.addMessageFromMail = function(project, number, mailObject) {
         var text = mailObject.html;
 
         if (text) {
-            text = text.replace(/<base[^>]*>/ig, '');
+            text = text.replace(/<base[^>]*>/ig, '').replace('<style[^>]*>.*?</style>', '');
         } else {
             text = mailObject.text.replace(/\r?\n/g, '<br>');
         }
+        text = striptags(text, global.config.tickets.editor.allowedTags);
 
-        if (author.address != ticket.author && author.address != project.responsible) {
-            //text += '\n\n-- Отправлено с ' + author.address + ' <' + author.name + '>';
+        var authorEmail = author.address.toLowerCase();
+        if (authorEmail === ticket.author.toLowerCase()) {
+            authorEmail = ticket.author;
+        } else if (authorEmail === project.responsible.toLowerCase()) {
+            authorEmail = project.responsible;
+        } else {
+            console.log(new Date() + ': message not added, author address: ' + author.address);
             return false;
         }
 
         if (!ticket.opened) {
-            return false;
+            ticket.opened = true;
+            sendMailOnTicketOpen(project, ticket);
+
+            // Отправить ПУШ-оповещение
+            self.prepareTicketsForClient([ticket], function(err, data) {
+                var ticket = data[0];
+                global.io.to(project.code        ).emit('ticketOpened', { ticket: ticket, source: authorEmail });
+                global.io.to(ticket.author.email).emit('ticketOpened', { ticket: ticket, source: authorEmail });
+            });
         }
 
         var messageObj = new messageModel.model({
             date: mailObject.date,
-            author: author.address,
+            author: authorEmail,
             text: text,
             files: fileModel.proceedMailAttachments(project.code + '-' + ticket.number, mailObject.attachments)
         });
@@ -211,7 +278,9 @@ function sendMailOnTicketAdd(project, ticket) {
 
     var to = project.responsible;
     var subject = 'Helpdesk создан новый тикет: "' + ticket.title + '" [#' + ticketNumber + ']';
-    var text = '<p>Сообщение:</p><br>\n<br>\n';
+    var text = 'От кого: ' + ticket.authorName + '<br>\n';
+    text += 'Тема обращения: ' + ticket.title + '<br>\n<br>\n';
+    text += '<p>Сообщение:</p><br>\n<br>\n';
     text += ticket.messages[0].text;
     mailModel.sendMail(to, subject, text, true, project, ticket.messages[0].getFilesForMail());
 
@@ -248,7 +317,7 @@ function sendMailOnTicketClose(project, ticket) {
  * @param ticket
  */
 function sendMailOnTicketOpen(project, ticket) {
-    var ticketNumber = this.compileTicketNumber(project, ticket.number);
+    var ticketNumber = exports.compileTicketNumber(project, ticket.number);
 
     var to = project.responsible;
     var subject = 'Helpdesk тикет "' + ticket.title + '" переоткрыт: [#' + ticketNumber + ']';
@@ -297,7 +366,13 @@ function sendMailOnMessageAdd(project, ticket, message, filesSkiped) {
 
     var to = project.responsible == message.author ? ticket.author : project.responsible;
     var subject = 'Helpdesk тикет "' + ticket.title + '"  [#' + ticketNumber + ']: новое сообщение';
-    var text = 'Новое сообщение в тикете:<br>\n<br>\n';
+    var text = '';
+
+    if (project.responsible != message.author) {
+        text += 'От кого: ' + ticket.authorName + '<br>\n';
+    }
+    text += 'Тема обращения: ' + ticket.title + '<br>\n<br>\n';
+    text += 'Новое сообщение в тикете:<br>\n<br>\n';
     text += message.text;
 
     mailModel.sendMail(to, subject, text, true, project, message.getFilesForMail());

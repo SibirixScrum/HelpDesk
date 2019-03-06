@@ -1,16 +1,12 @@
 /*** @jsx React.DOM */
 
 const React = require('react');
+const {translate, i18n} = require('../i18n');
 
 const Copyright = React.createClass({
     render() {
         return (
-            <div className="sibirix">
-                <a target="_blank" href="http://www.sibirix.ru/">
-                    <span className="slon" />
-                </a>
-                <span className="text"> — разработка сайта</span>
-            </div>
+            <div className="sibirix" dangerouslySetInnerHTML={{__html: translate('copyright')}}/>
         )
     }
 });

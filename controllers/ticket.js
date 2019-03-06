@@ -12,6 +12,11 @@ var messageModel = models.message;
 var fileModel = models.file;
 var userModel = models.user;
 
+
+let templateString = require('../services/template-string');
+const i18nService = require('../services/i18n');
+let i18nHelper = new i18nService.i18n();
+
 /**
  * Получение списка тикетов
  */
@@ -21,6 +26,11 @@ router.get('/list', function(req, res) {
         return;
     }
 
+    templateString.setCurrentProjectByDomain(req.get('host'));
+    i18nHelper.setConfig(req);
+    ticketModel.setTemplateBuilder(templateString);
+    ticketModel.setI18nHelper(i18nHelper);
+
     var userEmail = req.session.user.email;
     var offset = req.query.offset ? req.query.offset : 0;
     var sort = req.query.sort ? req.query.sort : 'date asc';
@@ -29,7 +39,7 @@ router.get('/list', function(req, res) {
     var emailFilter = req.query.email ? req.query.email : false;
     var tagsFilter = req.query.tags ? req.query.tags.split(',') : false;
 
-    var projectList = projectModel.getResponsibleProjectsList(userEmail);
+    var projectList = i18nHelper.translateProjects(projectModel.getResponsibleProjectsList(userEmail));
 
     var filter = {};
     if (projectList.length) {
@@ -82,6 +92,11 @@ router.get('/detail/:projectCode/:number', function(req, res) {
     var projectCode = req.params.projectCode;
     var number = parseInt(req.params.number, 10);
 
+    templateString.setCurrentProjectByDomain(req.get('host'));
+    i18nHelper.setConfig(req);
+    ticketModel.setTemplateBuilder(templateString);
+    ticketModel.setI18nHelper(i18nHelper);
+
     if (!projectCode || !number) {
         res.json({ result: false, error: 'no params' });
         return;
@@ -119,6 +134,17 @@ var upload = multer({ storage: storage, fileFilter: fileModel.fileFilter, limits
 var cpUpload = upload.fields([{ name: 'files[]', maxCount: global.config.files.maxCount }]);
 
 router.post('/add', cpUpload, function (req, res) {
+
+    templateString.setCurrentProjectByDomain(req.get('host'));
+    i18nHelper.setConfig(req);
+
+    userModel.setI18nHelper(i18nHelper);
+    userModel.setTemplateBuilder(templateString);
+
+    ticketModel.setI18nHelper(i18nHelper);
+    ticketModel.setTemplateBuilder(templateString);
+
+
     var project, projectCode = req.body.projectCode;
     if (!req.files) req.files = {};
 
@@ -189,9 +215,9 @@ router.post('/add', cpUpload, function (req, res) {
         userModel.createGetUser(email, name, function(err, user, pass) {
             // Если передан пароль - пользователь создан
             if (pass) {
-                ticketModel.sendMailOnTicketAddUserCreate(project, ticket, pass);
+                ticketModel.sendMailOnTicketAddUserCreate(project, ticket, user, pass);
             } else {
-                ticketModel.sendMailOnTicketAdd(project, ticket);
+                ticketModel.sendMailOnTicketAdd(project, ticket, user);
             }
 
             var result = {
@@ -248,13 +274,18 @@ router.post('/close', function (req, res) {
         return;
     }
 
+    templateString.setCurrentProjectByDomain(req.get('host'));
+    i18nHelper.setConfig(req);
+
+    ticketModel.setI18nHelper(i18nHelper);
+    ticketModel.setTemplateBuilder(templateString);
+
     ticketModel.findTicket(projectCode, number, function(err, ticket) {
         if (err) { res.json({ result: false, error: 'no ticket' }); return; }
 
         if (ticketModel.hasRightToWrite(ticket, req.session.user)) {
             ticket.opened = false;
             ticket.save();
-
 
             var project = projectModel.getProjectByCode(projectCode);
             ticketModel.sendMailOnTicketClose(project, ticket);
@@ -285,6 +316,12 @@ router.post('/open', function (req, res) {
         res.json({ result: false, error: 'no auth' });
         return;
     }
+
+    templateString.setCurrentProjectByDomain(req.get('host'));
+    i18nHelper.setConfig(req);
+
+    ticketModel.setI18nHelper(i18nHelper);
+    ticketModel.setTemplateBuilder(templateString);
 
     ticketModel.findTicket(projectCode, number, function(err, ticket) {
         if (err) { res.json({ result: false, error: 'no ticket' }); return; }
@@ -326,6 +363,12 @@ router.post('/tag-add', function(req, res) {
         return;
     }
 
+    templateString.setCurrentProjectByDomain(req.get('host'));
+    i18nHelper.setConfig(req);
+
+    ticketModel.setI18nHelper(i18nHelper);
+    ticketModel.setTemplateBuilder(templateString);
+
     ticketModel.findTicket(projectCode, number, function(err, ticket) {
         if (err) {
             res.json({result: false, error: 'no ticket'});
@@ -366,6 +409,12 @@ router.post('/tag-remove', function(req, res) {
         res.json({result: false, error: 'no tag'});
         return;
     }
+
+    templateString.setCurrentProjectByDomain(req.get('host'));
+    i18nHelper.setConfig(req);
+
+    ticketModel.setI18nHelper(i18nHelper);
+    ticketModel.setTemplateBuilder(templateString);
 
     ticketModel.findTicket(projectCode, number, function(err, ticket) {
         if (err) {

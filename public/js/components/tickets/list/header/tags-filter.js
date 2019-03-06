@@ -1,5 +1,6 @@
 /*** @jsx React.DOM */
 const React = require('react');
+const {translate, i18n} = require('../../../../i18n');
 
 const TagsFilterItem = React.createClass({
     render() {
@@ -17,7 +18,8 @@ const TagsFilterItem = React.createClass({
 const TagsFilter = React.createClass({
     getInitialState() {
         return {
-            tagFilter: ''
+            tagFilter: '',
+            tagsSelected: []
         }
     },
 
@@ -40,7 +42,7 @@ const TagsFilter = React.createClass({
         return (
             <div className="dropdown" style={{display: this.props.opened ? 'block' : 'none'}}>
                 <div className="input-wrapper">
-                    <input type="text" placeholder="Поиск по email" value={this.state.tagFilter} onChange={e => this.setState({tagFilter: e.target.value})} />
+                    <input type="text" placeholder={translate('tickets.header.filter.tag.title')} value={this.state.tagFilter} onChange={e => this.setState({tagFilter: e.target.value})} />
                     <i className="icon" />
                 </div>
                 {this.props.tagsSelected.map(tag => <TagsFilterItem key={tag} value={tag} selected={true} onTagClick={this.onTagClick(tag)} />)}

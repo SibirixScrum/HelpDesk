@@ -1,6 +1,7 @@
 /*** @jsx React.DOM */
 const React = require('react');
 const Select = require('react-select');
+const {translate, i18n} = require('../../../i18n');
 
 const TicketDetailTags = React.createClass({
 
@@ -21,7 +22,7 @@ const TicketDetailTags = React.createClass({
                 <div className="tag-add">
                     <Select
                         value={this.state.selectVal}
-                        placeholder="Добавить тег"
+                        placeholder={translate('tickets.do.addTag')}
                         allowCreate={true}
                         options={this.props.tagsReference.map(tag => { return { value: tag, label: tag } })}
                         onChange={val => {

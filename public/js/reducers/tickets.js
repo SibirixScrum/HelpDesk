@@ -16,7 +16,7 @@ const initialTickets = {
     detailedOpened: false,
     stateCount: {opened: 0, closed: 0},
     items: [],
-    projects: []
+    projects: [],
 };
 
 function tickedIsShowed(state, ticket) {
@@ -70,9 +70,10 @@ function ticketsBy(sort) {
 
 function tickets(state = initialTickets, action = {type: ''}) {
     let ticket, newState;
+
     switch (action.type) {
         case ActionTypes.RESET_TICKETS_STATE:
-            return extend({}, initialTickets, {filter: {projects: []}});
+            return extend({}, initialTickets, extend({}, initialTickets.filter, { projects: []}));
 
         case ActionTypes.SET_STATE:
             newState = extend({}, state, {filter: extend({}, state.filter, { state: action.filter }), detailedOpened: false});

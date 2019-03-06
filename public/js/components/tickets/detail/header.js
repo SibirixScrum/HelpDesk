@@ -1,5 +1,6 @@
 /*** @jsx React.DOM */
 const React = require('react');
+const {translate, i18n} = require('../../../i18n');
 
 const TicketsDetailHeader = React.createClass({
     render() {
@@ -21,7 +22,7 @@ const TicketsDetailHeader = React.createClass({
 
                 <a onClick={() => onStateClickHandler()}
                    className={classes}
-                   href="javascript:void(0)">{ticket.opened ? 'Закрыть тикет' : 'Открыть тикет'}</a>
+                   href="javascript:void(0)">{ticket.opened ? translate('tickets.do.close') : translate('tickets.do.open')}</a>
 
                 <span className="ticket-title" title={ticket.title}>{ticket.title}</span>
                 {proj ? <span className="number">{proj.letters}-{ticket.number}</span> : ''}

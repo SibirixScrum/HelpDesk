@@ -11,6 +11,10 @@ var messageModel = models.message;
 var fileModel = models.file;
 var mailModel = models.mail;
 
+let templateString = require('../services/template-string');
+const i18nService = require('../services/i18n');
+let i18nHelper = new i18nService.i18n();
+
 /**
  * Добавление сообщения в тикет
  */
@@ -37,6 +41,12 @@ router.post('/add', cpUpload, function (req, res) {
         res.json({ result: false, error: 'no auth' });
         return;
     }
+
+    templateString.setCurrentProjectByDomain(req.get('host'));
+    i18nHelper.setConfig(req);
+
+    ticketModel.setI18nHelper(i18nHelper);
+    ticketModel.setTemplateBuilder(templateString);
 
     ticketModel.findTicket(projectCode, number, function(err, ticket) {
         if (err) {

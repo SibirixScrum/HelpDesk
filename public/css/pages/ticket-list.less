@@ -98,6 +98,7 @@
         width: 249px;
         height: 100vh;
         background: #414042;
+        position: relative;
 
         .column-title {
             padding: 0 30px 0 22px;
@@ -227,9 +228,20 @@
             }
         }
 
-        .sibirix {
-            left: 20px;
+        .sidebar-btn-wrapper {
+            position: absolute;
             bottom: 22px;
+            left: 20px;
+            right: 20px;
+            display: flex;
+            flex-flow: row wrap;
+        }
+
+        .sibirix {
+            position: static;
+            width: 100%;
+            display: block;
+            margin-top: 22px;
         }
     }
 

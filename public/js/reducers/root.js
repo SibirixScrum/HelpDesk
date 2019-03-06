@@ -1,10 +1,28 @@
 const extend = require('extend');
 const ActionTypes = require('../constants/action-types');
+const {translate, getCurLang, translateWithoutCode, i18n} = require('../i18n');
+
+
+let project;
+
+if (0 !== APP.projects.length) {
+    project = APP.projects.filter(function(p) {
+        return p.domain === document.location.host;
+    }).shift();
+
+    if (undefined === project) {
+        document.location.href = '//' + APP.projects[0].domain;
+    }
+}
+
+
 const initialState = {
     modal: false,
     user: window.APP.user,
     allowedProjects: window.APP.countTickets,
-    tagsReference: window.APP.tagsReference
+    tagsReference: window.APP.tagsReference,
+    lng: getCurLang(),
+    curProject: project
 };
 
 function root(state = initialState, action={type: ''}) {
@@ -45,6 +63,11 @@ function root(state = initialState, action={type: ''}) {
             return extend({}, state, {
                 user: false,
                 allowedProjects: false
+            });
+
+        case ActionTypes.CHANGE_LANG:
+            return extend({}, state, {
+                lng: action.lng
             });
 
         default:

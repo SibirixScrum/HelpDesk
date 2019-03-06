@@ -3,7 +3,8 @@ const isIE9    = require('../../../ie-check');
 const React    = require('react');
 const request  = require('superagent');
 const Dropzone = require('react-dropzone');
-
+const {onDrop} = require('../../../file-drop');
+const {translate, i18n} = require('../../../../i18n');
 const _filesConfig = APP.files;
 
 const ENTER_KEY = 13;
@@ -101,28 +102,8 @@ const TicketAnswerForm = React.createClass({
     onTextChange() {
         this.setState({textIsEmpty: false});
     },
-    onDrop(files) {
-        const newFiles = this.state.files;
-        let filesError = false;
-        files.forEach(function(file) {
-            let ext = file.name.split('.')[file.name.split('.').length - 1];
 
-            if (newFiles.length >= _filesConfig.maxCount) {
-                filesError = 'Пожалуйста, не более ' + _filesConfig.maxCount + ' файлов.';
-            } else if (file.size > _filesConfig.maxSize) {
-                filesError = 'Пожалуйста, файлы не более ' + Math.round(_filesConfig.maxSize / 1000000) + 'Мб.';
-            } else if (_filesConfig.extensions.indexOf(ext) === -1) {
-                let exts   = _filesConfig.extensions.join(', ');
-                filesError = 'Извините, но я понимаю только следующие расширения файлов: ' + exts;
-            } else {
-                newFiles.push(file)
-            }
-        });
-
-        this.setState({files: newFiles, filesError, dragHover: false});
-
-        if (filesError) this.props.showModal({text: filesError});
-    },
+    //onDrop: onDrop.bind(this),
 
     onUploadClick() {
         this.refs.dropzone.open();
@@ -177,26 +158,26 @@ const TicketAnswerForm = React.createClass({
 
     render() {
         const onDeleteFile = this.onDeleteFile;
+        const onDropFile = onDrop;
         return (
             <div className="answer">
                 <form action="javascript:void(0)" method="post" encType="multipart/form-data">
                     <div className={this.state.textIsEmpty ? "textarea-wrap error" : "textarea-wrap"}>
-                        <textarea id="answer" name="text" ref="text"></textarea>
-                        <span className="error-text">Необходимо написать ответ</span>
+                        <textarea id="answer" name="text" ref="text"/>
+                        <span className="error-text">{translate('messages.form.answer.errors.empty')}</span>
                     </div>
                     <a onClick={this.onSubmit}
                        className={this.state.isLoading ? "btn btn-blue js-send loading" : "btn btn-blue js-send"}
-                       href="javascript:void(0)">Отправить</a>
-                    <span className="sub">или нажмите Ctrl+Enter</span>
+                       href="javascript:void(0)">{translate('messages.form.submit.title')}</a>
+                    <span className="sub">{translate('messages.form.submit.sub')}</span>
                     {isIE9 ? '' : <Dropzone onDragEnter={this.onFileDragEnter}
                                                         onDragLeave={this.onFileDragLeave}
                                                         className={this.state.dragHover ? "drag-hover dropzone-drop" : "dropzone-drop"}
                                                         ref="dropzone"
                                                         disableClick={true}
-                                                        onDrop={this.onDrop}>
+                                                        onDrop={onDropFile.bind(this)}>
                                     <label className="file-label">
-                                        <a onClick={this.onUploadClick} href="javascript:void(0);" className="file">Прикрепить
-                                            файл</a>
+                                        <a onClick={this.onUploadClick} href="javascript:void(0);" className="file">{translate('messages.form.file.title')}</a>
                                     <span className="files">
                                         {this.state.files.map((file, i) => {
                                             return <File onDeleteFile={onDeleteFile} key={i} index={i} file={file}/>

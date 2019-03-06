@@ -1,8 +1,10 @@
 /*** @jsx React.DOM */
 const React = require('react');
 const moment = require('moment');
+const {translate, i18n} = require('../../../../i18n');
 require('moment/locale/ru');
-moment.locale('ru');
+moment.locale(i18n.language);
+
 
 const TicketMessage = React.createClass({
     componentDidUpdate() {
@@ -38,7 +40,7 @@ const Message = React.createClass({
                     {message.files.length ?
                         <div className="files">
                             <br/>
-                            <div>Прикрепленные файлы:</div>
+                            <div>{translate('messages.file.title')}</div>
                             {message.files.map((file) => <File link={file.path} title={file.name} />)}
                         </div>
                      : ''}

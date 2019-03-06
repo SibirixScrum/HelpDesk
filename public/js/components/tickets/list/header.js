@@ -3,26 +3,29 @@ const React = require('react');
 const _ = require('underscore');
 const SortItem = require('./header/sort-item');
 const TagsFilter = require('./header/tags-filter');
+
+const {translate, i18n} = require('../../../i18n');
+
 const SortTypes = [
     {
         sort: 'date asc',
-        name: 'По последнему ответу',
-        dir: '(новые в начале)'
+        name: 'tickets.sortTypes.dateAsc.name',
+        dir: 'tickets.sortTypes.dateAsc.dir'
     },
     {
         sort: 'date desc',
-        name: 'По последнему ответу',
-        dir: '(старые в начале)'
+        name: 'tickets.sortTypes.dateDesc.name',
+        dir: 'tickets.sortTypes.dateDesc.dir'
     },
     {
         sort: 'opened asc',
-        name: 'Статусу',
-        dir: '(закрытые в начале)'
+        name: 'tickets.sortTypes.openedAsc.name',
+        dir: 'tickets.sortTypes.openedAsc.dir'
     },
     {
         sort: 'opened desc',
-        name: 'Статусу',
-        dir: '(открытые в начале)'
+        name: 'tickets.sortTypes.openedDesc.name',
+        dir: 'tickets.sortTypes.openedDesc.dir'
     }
 ];
 
@@ -95,7 +98,7 @@ const TicketsListHeader = React.createClass({
         return (
             <div className="column-title">
                 <div className="sort-block">
-                    <span className={"one-sort current " + (currentSortItem.sort.match(/desc$/) ? 'desc' : 'asc')} onClick={this.onClickHandler}>{currentSortItem.name}</span>
+                    <span className={"one-sort current " + (currentSortItem.sort.match(/desc$/) ? 'desc' : 'asc')} onClick={this.onClickHandler}>{translate(currentSortItem.name)}</span>
 
                     <div className="dropdown" style={{display: this.state.sortOpened ? 'block' : 'none'}}>
                         {sortItems}
@@ -103,7 +106,7 @@ const TicketsListHeader = React.createClass({
                 </div>
 
                 <div className="filter-tag-block">
-                    <span className="title" onClick={this.onTagsClickHandler}>Поиск по тегу</span>
+                    <span className="title" onClick={this.onTagsClickHandler}>{translate('tickets.header.filter.tag.title')}</span>
 
                     <TagsFilter opened={this.state.tagsOpened}
                                 tagsSelected={this.props.filter.tags}
@@ -114,11 +117,11 @@ const TicketsListHeader = React.createClass({
 
                 <div className="filter-email-block">
                     <div className="input-wrapper">
-                        <input type="text" placeholder="Поиск по email" value={this.state.filter.email} onChange={e => this.debounceFilterChange('email', e.target.value)} />
+                        <input type="text" placeholder={translate('tickets.header.filter.email.title')} value={this.state.filter.email} onChange={e => this.debounceFilterChange('email', e.target.value)} />
                         <i className="icon" />
                     </div>
                 </div>
-                <a onClick={this.props.togglePopup} href="javascript:void(0);" className="btn btn-blue-small">Добавить тикет</a>
+                <a onClick={this.props.togglePopup} href="javascript:void(0);" className="btn btn-blue-small">{translate('tickets.btnAdd.title')}</a>
             </div>
         )
     }

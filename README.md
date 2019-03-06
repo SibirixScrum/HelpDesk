@@ -1,9 +1,9 @@
 # HelpDesk
 
-### Лицензия
+### Р›РёС†РµРЅР·РёСЏ
 GPL v3 http://www.gnu.org/licenses/gpl-3.0.ru.html
 
-### Установка
+### РЈСЃС‚Р°РЅРѕРІРєР°
 ```sh
 mkdir helpdesk
 cd ./helpdesk
@@ -11,21 +11,62 @@ git clone https://github.com/SibirixScrum/HelpDesk.git ./
 npm i
 ```
 
-### Настройка
+### РќР°СЃС‚СЂРѕР№РєР°
 ```sh
 cd ./config
 cp ./config.example.js ./config.js
 mcedit ./config.js
 ```
 
-### Основые опции
-- connectString: 'mongodb://localhost/helpdesk' — база в mongo. Будет создана при первом запуске, если еще не существует.
-- exports.projects — настройки проектов.
-- responsible: 'tester@example.com' почта администратора проекта. Аккаунт создается автоматически. Пароль отправляется на почту.
-- exports.socketIo: 'SECRETKEY' — секретный ключ для шифрования куков.
-- exports.session.secret: 'SECRETKEY' — секретный ключ для шифрования сессий.
+### РћСЃРЅРѕРІС‹Рµ РѕРїС†РёРё
+- connectString: 'mongodb://localhost/helpdesk' вЂ” Р±Р°Р·Р° РІ mongo. Р‘СѓРґРµС‚ СЃРѕР·РґР°РЅР° РїСЂРё РїРµСЂРІРѕРј Р·Р°РїСѓСЃРєРµ, РµСЃР»Рё РµС‰Рµ РЅРµ СЃСѓС‰РµСЃС‚РІСѓРµС‚.
+- exports.projects вЂ” РЅР°СЃС‚СЂРѕР№РєРё РїСЂРѕРµРєС‚РѕРІ.
+- responsible: 'tester@example.com' вЂ” РїРѕС‡С‚Р° Р°РґРјРёРЅРёСЃС‚СЂР°С‚РѕСЂР° РїСЂРѕРµРєС‚Р°. РђРєРєР°СѓРЅС‚ СЃРѕР·РґР°РµС‚СЃСЏ Р°РІС‚РѕРјР°С‚РёС‡РµСЃРєРё. РџР°СЂРѕР»СЊ РѕС‚РїСЂР°РІР»СЏРµС‚СЃСЏ РЅР° РїРѕС‡С‚Сѓ.
+- exports.socketIo: 'SECRETKEY' вЂ” СЃРµРєСЂРµС‚РЅС‹Р№ РєР»СЋС‡ РґР»СЏ С€РёС„СЂРѕРІР°РЅРёСЏ РєСѓРєРѕРІ.
+- exports.session.secret: 'SECRETKEY' вЂ” СЃРµРєСЂРµС‚РЅС‹Р№ РєР»СЋС‡ РґР»СЏ С€РёС„СЂРѕРІР°РЅРёСЏ СЃРµСЃСЃРёР№.
+- exports.locales=['ru', 'en'] вЂ” РґРѕСЃС‚СѓРїРЅС‹Рµ СЏР·С‹РєРё: Р°РЅРіР»РёР№СЃРєРёР№ Рё СЂСѓСЃСЃРєРёР№.
+- en.json вЂ” Р°РЅРіР»РёР№СЃРєРёР№ СЏР·С‹Рє.
+- ru.json вЂ” СЂСѓСЃСЃРєРёР№ СЏР·С‹Рє.
 
-### Запуск
+### Р—Р°РїСѓСЃРє
+```sh
+node app.js
+```
+
+---
+
+# HelpDesk
+
+### Licence
+GPL v3 http://www.gnu.org/licenses/gpl-3.0.en.html
+
+### Installation
+```sh
+mkdir helpdesk
+cd ./helpdesk
+git clone https://github.com/SibirixScrum/HelpDesk.git ./
+npm i
+```
+
+### Configuring
+```sh
+cd ./config
+cp ./config.example.js ./config.js
+mcedit ./config.js
+```
+
+### Basic configurations
+- connectString: 'mongodb://localhost/helpdesk' вЂ” MongoDB database will be created (in case there isnвЂ™t any done yet by the time the program is launched for the first time). 
+- exports.projects вЂ” projects settings.
+- responsible: 'tester@example.com' вЂ” email of project Administrator. The account is created automatically, the password is sent to the email. 
+- exports.socketIo: 'SECRETKEY' вЂ” a private key for cookies encryption.
+- exports.session.secret: 'SECRETKEY' вЂ” a private key for sessions encryption.
+- exports.locales=['ru', 'en'] вЂ” available languages: English and Russian.
+- en.json вЂ” English.
+- ru.json вЂ” Russian.
+
+
+### Launch
 ```sh
 node app.js
 ```

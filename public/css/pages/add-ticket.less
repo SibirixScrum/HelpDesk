@@ -14,9 +14,7 @@
     .login.btn {
         transition: all .2s;
         display: block;
-        position: absolute;
-        right: 20px;
-        top: 20px;
+        position: relative;
         color: #fff;
         font-family: @font;
         padding: 10px 20px 10px 40px;
@@ -189,6 +187,8 @@
             &.error {
                 .error-text {
                     display: block;
+                    width: 100%;
+                    text-align: right;
                 }
             }
             input {

@@ -15,9 +15,16 @@ var jwt          = require('jsonwebtoken');
 var socketIo     = require('socket.io');
 var socketioJwt  = require('socketio-jwt');
 
+const i18next = require('./libs/i18next');
+const middleware = require('i18next-express-middleware');
+const i18nFsBackend = require('i18next-node-fs-backend');
+const intervalPlural = require('i18next-intervalplural-postprocessor');
+
 // Читаем конфиг
 var extend        = require('extend');
 var configExample = require('./config/config.example');
+
+let lang = require('./config/locale');
 
 try {
     var config = require('./config/config');
@@ -47,8 +54,46 @@ global.config = config = extend(true, configExample, config, {
     }
 });
 
+// инициализация i18n
+i18next
+    .use(i18nFsBackend)
+    .use(middleware.LanguageDetector)
+    .use(intervalPlural)
+    .init({
+        backend: {
+            loadPath: path.join(__dirname, 'public') + '/locales/{{lng}}.json',
+        },
+        fallbackLng: lang.fallbackLng,
+        lowerCaseLng: true,
+        preload: lang.locales,
+        interpolation: {
+            escapeValue: false
+        },
+
+        parseMissingKeyHandler: function(key, options) {
+            const regex = /^(\w+\.\w+\.)/;
+
+            if (regex.exec(key) !== null) {
+                let resultKey = key.replace(regex, '');
+                return i18next.t(resultKey, options);
+            }
+
+            return key;
+
+        },
+
+        detection: config.detection
+    });
+
+global.defaultTranslator = i18next.getFixedT(lang.defaultLanguage);
+
 var models = require('./models/');
+
 models.setCallback(function() {
+
+    models.project.validateProjectsConfig();
+    models.project.checkResponsible();
+
     var indexController   = require('./controllers/index');
     var ticketController  = require('./controllers/ticket');
     var messageController = require('./controllers/message');
@@ -69,7 +114,13 @@ models.setCallback(function() {
         saveUninitialized: true
     }));
 
-    app.use(favicon(__dirname + '/public/favicon.ico'));
+    app.use(
+        middleware.handle(i18next, {
+            removeLngFromUrl: false
+        })
+    );
+
+    //app.use(favicon(__dirname + '/public/favicon.ico'));
     app.use(logger('dev'));
     app.use(bodyParser.json({ limit: '10mb' }));
     app.use(bodyParser.urlencoded());

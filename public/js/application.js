@@ -12,6 +12,9 @@ const NotFoundRoute = Router.NotFoundRoute;
 
 const {Provider} = require('react-redux');
 
+const i18n = require('./i18n');
+
+
 const app = document.getElementById('app');
 
 const NotFound = React.createClass({

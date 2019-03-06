@@ -158,6 +158,9 @@ const Tickets = React.createClass({
                     onStateClick={this.props.setState}
                     onToggleProject={this.props.toggleProject}
                     onLogout={this.onLogout}
+                    lng={this.props.lng}
+                    changeLanguage={this.props.changeLanguage}
+                    curProject={this.props.curProject}
                     />
                 <TicketsList tickets={Object.assign({}, tickets)}
                              user={user}
@@ -191,7 +194,9 @@ function select(state) {
         user: state.root.user,
         tickets: Object.assign({}, state.tickets),
         allowedProjects: state.root.allowedProjects,
-        tagsReference: state.root.tagsReference
+        tagsReference: state.root.tagsReference,
+        lng: state.root.lng,
+        curProject: state.root.curProject
     }
 }
 
@@ -208,7 +213,8 @@ function mapDispatchToProps(dispatch) {
         closeDetail: (sortType) => dispatch(TicketsActions.closeDetail()),
         showModal: (content) => dispatch(RootActions.showModal(content)),
         tagAdd: (projectCode, ticketNumber, tag) => dispatch(TicketsActions.tagAdd(projectCode, ticketNumber, tag)),
-        tagRemove: (projectCode, ticketNumber, index) => dispatch(TicketsActions.tagRemove(projectCode, ticketNumber, index))
+        tagRemove: (projectCode, ticketNumber, index) => dispatch(TicketsActions.tagRemove(projectCode, ticketNumber, index)),
+        changeLanguage: (lng) => dispatch(RootActions.changeLang(lng)),
     }
 }
 

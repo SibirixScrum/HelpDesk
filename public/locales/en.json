@@ -1,0 +1,294 @@
+{
+  "name": "Helpdesk",
+  "title": "Helpdesk",
+  "formTitle": "Helpdesk",
+
+  "files": {
+    "manual1": "User manual"
+  },
+
+  "user": {
+    "createResponsible": {
+      "name": "Support",
+      "subject": "Helpdesk — administrator's new password",
+      "text": "<p>$t(projects.example.user.createResponsible.forProject_interval, {'postProcess': 'interval', 'count': {{projectCount}}}) {{projectNames}} new admin is assigned. Ticket list is avaliable <a href={{link}}>by the link</a><br>Login: {{login}}<br>Password: {{pass}}</p>",
+      "forProject_interval": "(1){For project};(2-inf){For projects}"
+    },
+
+    "sendResetEmail": {
+      "subject": "Helpdesk password reset",
+      "text": "Hello! We received your request on password changing. If you did not do that then just ignore this message.<br>\n Click on <a href={{link}}>the link</a> to change the password."
+    },
+
+    "resetPassword": {
+      "subject": "Helpdesk you password was changed",
+      "text": "Hello! </br>\n You password was changed. New password: &mdash; {{pass}}"
+    }
+  },
+  "mail": {
+    "sendMail": {
+      "additionalText": "The message contained attached files. You may look through them in your Helpdesk account",
+      "text": "{{text}} \n\n------------\n {{sing}} \n {{footerText}}",
+      "text_html": "{{text}} <br>\n<br>\n------------<br>\n {{sing}} <br>\n {{footerText}}"
+    },
+    "processMailObject": {
+      "subject": "New ticket from the mail"
+    },
+
+    "endText": "Best regards, \n {{projectName}} Team",
+    "endText_html": "Best regards, <br> {{projectName}} Team"
+  },
+  "ticket": {
+    "addMessageFromMail": {
+      "attachmentsText": "<br><br>Pay attention! Some of the files did not pass data validation, so they are not attached to the message."
+    },
+    "sendMailOnTicketAdd": {
+      "subjectForResponsible": "Helpdesk new ticket: \"{{title}}\" [#{{ticketNumber}}]",
+      "subjectForAuthor": "Helpdesk: ticket \"{{title}}\" [#{{ticketNumber}}]",
+      "textForResponsible": "From: {{authorName}} <br> Subject: {{title}} <br><br> <p>Text:</p><br><br> {{text}}",
+      "textForAuthor": "Hello! You have created a new ticket in {{projectName}} Helpdesk.<br> You may check the status of the ticket using your <a href={{link}}>Helpdesk account</a> or answering this message (please, save the ticket number in the subject)."
+    },
+    "sendMailOnTicketClose": {
+      "subject": "Helpdesk ticket \"{{title}}\" is closed: [#{{ticketNumber}}]",
+      "textForResponsible": "Ticket \"{{title}}\" is closed.",
+      "textForAuthor": "Hello! Your ticket in {{projectName}} Helpdesk is closed.<br> You may re-open the ticket using your <a href={{link}}>Helpdesk account</a>."
+    },
+    "sendMailOnTicketOpen": {
+      "subject": "Helpdesk ticket \"{{title}}\" is re-opened: [#{{ticketNumber}}]",
+      "textForResponsible": "Ticket \"{{title}}\" is re-opened.",
+      "textForAuthor": "Hello! Your ticket in {{projectName}} Helpdesk is re-opened.<br> You may re-open the ticket using your <a href={{link}}>Helpdesk account</a> or answering this message (please, save the ticket number in the subject)."
+    },
+    "sendMailOnTicketAddUserCreate": {
+      "subjectForResponsible": "Helpdesk new ticket: \"{{title}}\" [#{{ticketNumber}}]",
+      "subjectForAuthor": "Helpdesk: ticket \"{{title}}\" [#{{ticketNumber}}]",
+      "textForResponsible": "<p>Text:</p> <br><br> {{text}}",
+      "textForAuthor": "Hello! You have created a new ticket in {{projectName}} Helpdesk.<br> You may re-open the ticket using your <a href={{link}}>Helpdesk account</a>, or answering this message (please, save the ticket number in the subject).<br> Login: {{login}} <br> Password: {{pass}} <br>"
+    },
+    "sendMailOnMessageAdd": {
+      "subject": "Helpdesk ticket \"{{title}}\" [#{{ticketNumber}}]: new message",
+      "textForResponsible": "From: {{authorName}}<br> Subject: {{title}}<br><br> New message in the ticket:<br><br> {{text}}",
+      "textForAuthor": "Subject: {{title}}<br><br> New message in the ticket:<br><br> {{text}}"
+    }
+  },
+  "front": {
+    "modal": {
+      "header": "Error",
+      "text" : "Whoops! something went wrong",
+      "close": "Close"
+    },
+
+    "topLink": {
+      "isAuth": "Ticket list",
+      "isLogin": "Create a ticket",
+      "notAuth": "Sign in"
+    },
+
+    "errors": {
+      "email": {
+        "empty": "Please, enter correct email"
+      },
+      "file": {
+        "length": "Please, attach not more than {{count}} $t(projects.example.front.errors.file.lengthFile, {'count': {{count}}}).",
+        "lengthFile": "file",
+        "lengthFile_plural": "files",
+        "size": "Please, attach files not larger than {{count}} Mb .",
+        "extension": "Sorry, you can attach only these file extensions: {{extension}}"
+      }
+    },
+
+    "login": {
+      "passChanged": {
+        "header": "Password Reset",
+        "text": "You password is changed. Now, you may sign in using it. Check the new password in your email box."
+      },
+
+      "reset": {
+        "header": "Password Reset",
+        "text": "Password reset instruction is sent at your email!"
+      },
+
+      "form": {
+        "email": {
+          "title": "Email",
+          "errors": {
+            "wrong": "User is not found",
+            "empty": "$t(projects.example.front.errors.email.empty)"
+          }
+        },
+
+        "password": {
+          "title": "Password",
+          "errors": {
+            "wrong": "Password is incorrect",
+            "empty": "Enter your password"
+          }
+        },
+
+        "reset": {
+          "title": "Reset password"
+        },
+
+        "return": {
+          "title": "Back to sign in form"
+        },
+
+        "submit": {
+          "title": "Send"
+        },
+
+        "submitReset": {
+          "title": "Reset"
+        }
+      }
+    },
+
+    "addTicket": {
+      "form": {
+        "name": {
+          "title": "Your name",
+          "errors": {
+            "empty": "Please, enter your name"
+          }
+        },
+
+        "email": {
+          "title": "Email",
+          "errors": {
+            "empty": "$t(projects.example.front.errors.email.empty)"
+          }
+        },
+
+        "title": {
+          "title": "Subject",
+          "errors": {
+            "empty": "Please, enter the subject"
+          }
+        },
+
+        "text": {
+          "title": "Your message",
+          "errors": {
+            "empty": "Please, enter your message"
+          }
+        },
+
+        "agreement": {
+          "text": "I agree to <a href=\"/agreement/\" target=\"_blank\">the Terms </a> of processing my personal data",
+          "errors": {
+            "empty": "Please, confirm your agreement"
+          }
+        },
+
+        "file": {
+          "title": "Attach a file"
+        },
+
+        "submit": {
+          "title": "Send"
+        }
+      },
+
+      "popup": {
+        "isUser": "<span>Thank you for your request. <br/> We will contact you as soon as possible!</span>",
+        "notAuthUser": "<span>Congratulations! We are glad you are with us. <br/> To check the status of the ticket use your Helpdesk account.</span>",
+        "newUser": "<span>We have sent you a new password via email,<br/>use it to check the status of the ticket.</span>"
+
+      }
+    },
+
+    "tickets": {
+      "btnAdd": {
+        "title": "Create a ticket"
+      },
+      "status": {
+        "open": "Opened",
+        "close": "Closed"
+      },
+
+      "do": {
+        "open": "Open the ticket",
+        "close": "Close the ticket",
+        "addTag": "Add a tag"
+      },
+
+      "header": {
+        "filter": {
+          "tag": {
+            "title": "Search by tag"
+          },
+
+          "email": {
+            "title": "Search by email"
+          }
+        }
+      },
+
+      "sortTypes": {
+        "dateAsc": {
+          "name": "By last response",
+          "dir": "(new at the top)"
+        },
+
+        "dateDesc": {
+          "name": "$t(projects.example.front.tickets.sortTypes.dateAsc.name)",
+          "dir": "(old at the top)"
+        },
+
+        "openedAsc": {
+          "name": "By status",
+          "dir": "(closed at the top)"
+        },
+
+        "openedDesc": {
+          "name": "$t(projects.example.front.tickets.sortTypes.openedAsc.name)",
+          "dir": "(opened at the top)"
+        }
+      }
+    },
+
+    "messages": {
+      "file": {
+        "title": "Attached files:"
+      },
+
+      "form": {
+        "answer": {
+          "errors": {
+            "empty": "Please, enter your message"
+          }
+        },
+
+        "submit": {
+          "title": "Send",
+          "sub": "or press Ctrl+Enter"
+        },
+
+        "file": {
+          "title": "Attach a file"
+        }
+      }
+    },
+
+    "sidebar": {
+      "group": {
+        "title": "Groups"
+      },
+
+      "folder": {
+        "allMessage": "All requests",
+        "openMessage": "Opened",
+        "closeMessage": "Closed"
+      }
+    },
+
+    "copyright": "<a target=\"_blank\" href=\"http://www.sibirix.com/\"><span class=\"slon\" /></a><span class=\"text\"> — scrum studio</span>"
+  },
+
+  "projects": {
+    "example": {
+      "name": "exampleApp",
+      "title": "exampleApp"
+    }
+  },
+  "agreement": "agreement-en"
+}

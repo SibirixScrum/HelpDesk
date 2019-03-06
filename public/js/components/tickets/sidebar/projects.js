@@ -1,5 +1,6 @@
 const React   = require('react');
 const Project = require('./projects/index');
+const {translate, i18n} = require('../../../i18n');
 
 let projects = APP.projects;
 
@@ -17,7 +18,7 @@ const ProjectList = React.createClass({
 
         return (
             <div className={this.props.noTitle ? "groups popup" : "groups" }>
-                {this.props.noTitle ? '' : <div className="title">Показывать группы</div>}
+                {this.props.noTitle ? '' : <div className="title">{translate('sidebar.group.title')}</div>}
                 <ul>
                     {allowedProjectList.map((project, key) => <Project key={key}
                                                                        project={project}

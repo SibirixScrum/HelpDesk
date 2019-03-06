@@ -8,6 +8,9 @@ const TicketActions = require('../actions/tickets');
 const RootActions   = require('../actions/root');
 const RouteHandler  = ReactRouter.RouteHandler;
 
+const {translate, i18n} = require('../i18n');
+
+
 var socket = null;
 function connectIO(user, dispatch) {
     if (null === socket) {
@@ -156,8 +159,8 @@ const Root = React.createClass({
     },
 
     render() {
-        let modalHeader = 'Ошибка';
-        let modalText   = 'Что-то пошло не так!';
+        let modalHeader = translate('modal.header');
+        let modalText   = translate('modal.text');
 
         if (this.props.modal !== false) {
             modalHeader = this.props.modal.header || modalHeader;
@@ -174,7 +177,7 @@ const Root = React.createClass({
                         <div className="link-wrap">
                             <a onClick={this.hideModal}
                                href="javascript:void(0);"
-                               className="btn btn-red-big">Закрыть</a>
+                               className="btn btn-red-big">{translate('modal.close')}</a>
                         </div>
                     </div>
                 </Modal>}

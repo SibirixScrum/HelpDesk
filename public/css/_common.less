@@ -1,13 +1,13 @@
 @import "_var";
 
-body,
 html {
-    height: 100%;
-    background: url('@{path-images}bg.png') #343434;
+    min-height: 100%;
 }
 
 body {
+    height: 100vh;
     min-width: 1000px;
+    background: url('@{path-images}bg.jpg') #343434;
 }
 
 .wrapper {
@@ -359,6 +359,7 @@ form {
         display: inline-block;
         margin-right: 1px;
         vertical-align: top;
+        position: relative;
 
         &:after,
         &:before {
@@ -424,7 +425,7 @@ form {
     transition: all, .2s;
     max-width: 210px;
     width: auto;
-    display: inline-block;
+    display: block;
     text-overflow: ellipsis;
     white-space: nowrap;
     overflow: hidden;
@@ -442,5 +443,80 @@ form {
 .ie9 {
     .btn-blue {
         color: #003366 !important;
+    }
+}
+
+.singularity {
+    background-size: cover;
+    background: url('@{path-images}space.jpg') no-repeat fixed;
+}
+
+.header-btn-wrapper {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    display: flex;
+    left: 20px;
+    justify-content: space-between;
+}
+
+.language-switcher {
+    @height: 36px;
+    .transit();
+    .size(100px, @height);
+
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border: 1px solid @cWhite;
+    border-radius: 18px;
+    will-change: opacity, transform;
+    color: @cWhite;
+
+    small {
+        position: absolute;
+        .transit();
+        .size(52px, 100%);
+        top: 0;
+        left: -1px;
+        background: @cWhite;
+        border-radius: 18px;
+    }
+
+    &.hover {
+        background-color: rgba(255, 255, 2555, .2);
+    }
+
+    input {
+        .size(0);
+        position: absolute;
+        opacity: 0;
+        margin: 0;
+        padding: 0;
+        appearance: none;
+
+        &:checked + label {
+            color: @cBlack;
+            pointer-events: none;
+
+            &:after {
+                background-color: @cWhite;
+            }
+        }
+
+        &:last-of-type:checked ~ small {
+            transform: translateX(50px);
+        }
+    }
+
+    label {
+        .transit();
+        .text(16px, @height, 500);
+        position: relative;
+        padding: 0 16px;
+        z-index: 1;
+        display: inline-block;
+        cursor: pointer;
+        border-radius: 18px;
     }
 }

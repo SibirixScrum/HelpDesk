@@ -13,11 +13,12 @@
     <meta name="SKYPE_TOOLBAR" content="SKYPE_TOOLBAR_PARSER_COMPATIBLE" />
     <meta content="telephone=no" name="format-detection">
 
-    <title>Helpdesk</title>
+    <title><%= title %></title>
 
     <link href='https://fonts.googleapis.com/css?family=Roboto:400,700&amp;subset=latin,cyrillic-ext,cyrillic' rel='stylesheet' type='text/css'>
 
-    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/style.css?1">
+    <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
 </head>
 
-<body id="app">
+<body id="app" <%= className ? 'class='+className+'' : '' %>>

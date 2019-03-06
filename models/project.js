@@ -7,38 +7,58 @@ var ticketModel = require('./ticket');
 var userModel = require('./user');
 var extend = require('extend');
 
-validateProjectsConfig();
+let templateString = require('../services/template-string');
+const i18nService = require('../services/i18n');
+let i18nHelper = new i18nService.i18n();
+
+let templateBuilder = templateString;
+
+exports.setI18nHelper = (helper) => {
+    i18nHelper = helper;
+};
+
+exports.setTemplateBuilder = (builder) => {
+    templateBuilder = builder;
+};
 
 /**
  * Валидация конфига проектов
  * @returns {boolean}
  */
-function validateProjectsConfig() {
+function validateConfig() {
     if (!projectsList || !projectsList.length) {
         throw "No projects in config";
     }
 
-    var i, responsibles = {};
-    var colorLength = global.config.projectColors.length;
+    var i;
     for (i = 0; i < projectsList.length; i++) {
         var p = projectsList[i];
-        p.color = '#' + global.config.projectColors[i % colorLength];
         if (!p.code || !p.name || !p.domain || !p.responsible) {
             throw "Projects config are invalid! Required fields: code, name, domain, responsible.";
         }
-
-        if (!responsibles[p.responsible]) responsibles[p.responsible] = [];
-        responsibles[p.responsible].push(p);
     }
+
+    return true;
+}
+
+exports.validateProjectsConfig = validateConfig;
+
+exports.checkResponsible = () => {
+    let responsibles = {};
+    let colorLength = global.config.projectColors.length;
+
+    projectsList.forEach((current, index) => {
+        current.color = '#' + global.config.projectColors[index % colorLength];
+        if (!responsibles[current.responsible]) responsibles[current.responsible] = [];
+        responsibles[current.responsible].push(current);
+    });
 
     // Проверить, что ответственные созданы
     for (var email in responsibles) {
         if (!responsibles.hasOwnProperty(email)) continue;
         userModel.createResponsible(email, responsibles[email]);
     }
-
-    return true;
-}
+};
 
 /**
  *
@@ -203,4 +223,6 @@ exports.getAll = function(user) {
         return pr;
     });
 };
+
+
 

@@ -8,12 +8,27 @@ var mailModel = require('./mail');
 var collectionName = 'user';
 var ticketModel = require('./ticket');
 
+let templateString = require('../services/template-string');
+const i18nService = require('../services/i18n');
+let i18nHelper = new i18nService.i18n();
+
 var userSchema = new mongoose.Schema({
     name:       String,  // Выводимое имя
     email:      String,  // Email
     resetHash:  String,
-    password:   String   // Хеш пароля
+    password:   String,   // Хеш пароля
+    lng:        String  // язык пользователя
 });
+
+let templateBuilder = templateString;
+
+exports.setI18nHelper = (helper) => {
+    i18nHelper = helper;
+};
+
+exports.setTemplateBuilder = (builder) => {
+    templateBuilder = builder;
+};
 
 exports.scheme = userSchema;
 exports.model  = mongoose.model(collectionName, userSchema);
@@ -38,23 +53,31 @@ exports.createResponsible = function(email, projects, callback) {
 
         } else {
             var pass = this.generatePassword();
-            console.log(email, pass);
+
             var user = new userModel({
-                name:     'Техническая поддержка',
+                name:     i18nHelper.translator(`${templateBuilder.getStartCode()}.user.createResponsible.name`),
                 email:    email,
-                password: this.hashPassword(pass)
+                password: this.hashPassword(pass),
+                lng: i18nHelper.language
             });
 
             user.save(function() {
-                var projectNames = projects.map(function(obj) { return obj.name; } );
+                let projectNames = projects.map(function(obj) { return obj.name; } );
+
                 console.log('TP account created', email, pass, projectNames);
-                var subject = 'Helpdesk — новый пароль администратора';
-                var text = '<p>';
-                text += ((projects.length > 1) ? 'Для проектов ' : 'Для проекта ') + projectNames.join(', ');
-                var url = 'http://' + projects[0].domain + '/?login=' + encodeURIComponent(email);
-                text += ' создан новый администратор. Список тикетов доступен <a href="' + url + '">по ссылке</a><br>';
-                text += "Логин: " + email + "<br>\nПароль: " + pass;
-                text += "</p>";
+
+                let subject = i18nHelper.translator(`${templateBuilder.getStartCode()}.user.createResponsible.subject`);
+                let text = i18nHelper.translator(
+                    `${templateBuilder.getStartCode()}.user.createResponsible.text`,
+                    {
+                        projectCount: projectNames.length,
+                        projectNames: i18nHelper.translator(projectNames.join(', ')),
+                        link: 'http://' + projects[0].domain + '/?login=' + encodeURIComponent(email),
+                        login: email,
+                        pass: pass
+                    }
+                );
+
                 mailModel.sendMail(email, subject, text, true, global.config.projects[0]);
             });
         }
@@ -69,6 +92,7 @@ exports.createResponsible = function(email, projects, callback) {
  */
 exports.createGetUser = function(email, name, callback) {
     var userModel = this.model;
+
     userModel.find({email: email}, function(err, data) {
         if (err) { callback(err); return; }
 
@@ -81,7 +105,8 @@ exports.createGetUser = function(email, name, callback) {
             var user = new userModel({
                 name:     name,
                 email:    email,
-                password: this.hashPassword(pass)
+                password: this.hashPassword(pass),
+                lng: i18nHelper.language
             });
 
             user.save(function() {
@@ -155,6 +180,12 @@ exports.sendResetEmail = function(email, cb) {
 
             var project = global.config.projects.filter(function(p) {return p.code === tickets[0].project})[0];
 
+            if (!project) {
+                cb({result: false, error: 'no user'});
+                return;
+
+            }
+
             userModel.update({email: email}, {resetHash: hash}, function(err, raw) {
                 if (err) {
                     cb({result: false, error: 'no user'});
@@ -162,8 +193,13 @@ exports.sendResetEmail = function(email, cb) {
                 }
 
                 var to = email;
-                var subject = 'Helpdesk восстановление пароля';
-                var text = 'Добрый день. Вы оставили запрос на смену пароля. Если вы этого не делали, просто проигнорируйте это письмо.<br>\n Чтобы поменять пароль, перейдите по этой <a href="http://' + project.domain + '/?reset='+hash+'&login='+encodeURIComponent(email)+'">ссылке</a>.';
+                var subject = i18nHelper.translator(`${templateBuilder.getStartCode()}.user.sendResetEmail.subject`);
+
+                var text = i18nHelper.translator(
+                    `${templateBuilder.getStartCode()}.user.sendResetEmail.text`,
+                    {
+                        link: `http://${project.domain}/?reset=${hash}&login=${encodeURIComponent(email)}`
+                    });
 
                 mailModel.sendMail(to, subject, text, true, project);
 
@@ -204,8 +240,8 @@ exports.resetPassword = function(email, hash, cb) {
                 var project = global.config.projects.filter(function(p) {return p.code === tickets[0].project})[0];
 
                 var to = email;
-                var subject = 'Helpdesk ваш пароль был изменен';
-                var text = 'Добрый день. </br>\n Ваш пароль был успешно изменен. Новый пароль &mdash; ' + pass;
+                var subject = i18nHelper.translator(`${templateBuilder.getStartCode()}.user.resetPassword.subject`);
+                var text = i18nHelper.translator(`${templateBuilder.getStartCode()}.user.resetPassword.text`, {pass: pass});
 
                 mailModel.sendMail(to, subject, text, true, project);
 
@@ -214,3 +250,15 @@ exports.resetPassword = function(email, hash, cb) {
         });
     }.bind(this));
 }
+
+exports.changeLng = (userEmail, lng) => {
+    let userModel = this.model;
+
+    userModel.find({email: userEmail}, (err, data) => {
+        if (err) { return; }
+
+        if (data && data.length) {
+            userModel.update({email: userEmail}, {lng: lng}, () => {});
+        }
+    });
+};

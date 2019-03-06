@@ -5,7 +5,18 @@
 @path-images: '../images/';
 @path-base64-images: '../images/base64/';
 
-@font: 'Roboto', sans-serif;;
+@font: 'Roboto', sans-serif;
+@transitTime: .3s;
+@lineHeight: 1.2px;
+
+
+/**
+ * Цвета
+ */
+
+@cWhite: #fff;
+@cBlack: #010209;
+
 
 /****
  * Миксины, разное
@@ -60,5 +71,13 @@
     &:after {
         clear: both;
     }
+}
+
+.transit(@prop: all, @time: @transitTime, @ease: ease) {
+    transition: @prop @time @ease;
+}
+
+.text(@fontSize: 16px, @lineHeight: @lineHeight, @fontWeight: 300, @font: @font) {
+    font: @fontWeight @fontSize/@lineHeight @font;
 }
 

@@ -1,0 +1,11 @@
+{
+  "projects": {
+    "helpdesk": {
+      "name": "HELPDESK",
+      "title": "Helpdesk",
+      "formTitle": "ЦЕНТР ПОДДЕРЖКИ"
+    }
+  },
+
+  "agreement": "agreement"
+}

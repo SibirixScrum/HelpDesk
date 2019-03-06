@@ -6,6 +6,10 @@ var models = require('../models/');
 var userModel = models.user;
 var projectModel = models.project;
 
+let templateString = require('../services/template-string');
+const i18nService = require('../services/i18n');
+let i18nHelper = new i18nService.i18n();
+
 /**
  * Авторизация
  */
@@ -17,6 +21,15 @@ router.post('/login', function (req, res) {
         res.json({ result: false, error: 'no auth data' });
         return;
     }
+
+    templateString.setCurrentProjectByDomain(req.get('host'));
+    i18nHelper.setConfig(req);
+
+    userModel.setI18nHelper(i18nHelper);
+    userModel.setTemplateBuilder(templateString);
+
+    projectModel.setI18nHelper(i18nHelper);
+    projectModel.setTemplateBuilder(templateString);
 
     // Ищем пользователя
     userModel.model.find({ email: email }, function(err, data) {
@@ -33,14 +46,16 @@ router.post('/login', function (req, res) {
             req.session.user = {
                 email: email,
                 name:  user.name,
-                token: token
+                token: token,
+                lng: user.lng || i18nHelper.language
             };
 
             var answer = {
                 result: true,
                 user: {
                     name:   user.name,
-                    email:  email
+                    email:  email,
+                    lng: user.lng || i18nHelper.language
                 },
                 token: token,
                 countTickets: false
@@ -63,10 +78,16 @@ router.post('/login', function (req, res) {
 router.post('/reset', function(req, res) {
     var email = req.body.email.trim();
 
+    templateString.setCurrentProjectByDomain(req.get('host'));
+    i18nHelper.setConfig(req);
+
+    userModel.setI18nHelper(i18nHelper);
+    userModel.setTemplateBuilder(templateString);
+
     userModel.sendResetEmail(email, function(response) {
         res.json(response);
     })
-})
+});
 
 /**
  * Логаут
@@ -74,6 +95,21 @@ router.post('/reset', function(req, res) {
 router.all('/logout', function (req, res) {
     req.session.user = null;
     res.json({ result: true });
+});
+
+router.post('/change-lang', function(req, res) {
+    if (!req.session.user) {
+        res.json({ result: false, error: 'no auth' });
+        return;
+    }
+
+    templateString.setCurrentProjectByDomain(req.get('host'));
+    i18nHelper.setConfig(req);
+
+    userModel.changeLng(req.session.user.email, req.body.lng);
+
+    res.json({ result: true});
+
 });
 
 module.exports = router;

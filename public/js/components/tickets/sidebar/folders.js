@@ -1,5 +1,6 @@
 const React = require('react');
 const Folder = require('./folders/index');
+const {translate, i18n} = require('../../../i18n');
 
 const Folders = React.createClass({
     render() {
@@ -26,9 +27,9 @@ const Folders = React.createClass({
 
         return (
             <ul className="folders">
-                <Folder onStateClick={this.props.onStateClick} activeFolder={active} folder={{title: 'Все обращения', code: 'SHOW_ALL', count: allCount}} />
-                <Folder onStateClick={this.props.onStateClick} activeFolder={active} folder={{title: 'Открытые', code: 'SHOW_OPENED', count: opened}} />
-                <Folder onStateClick={this.props.onStateClick} activeFolder={active} folder={{title: 'Закрытые', code: 'SHOW_CLOSED', count: closed}} />
+                <Folder onStateClick={this.props.onStateClick} activeFolder={active} folder={{title: translate('sidebar.folder.allMessage'), code: 'SHOW_ALL', count: allCount}} />
+                <Folder onStateClick={this.props.onStateClick} activeFolder={active} folder={{title: translate('sidebar.folder.openMessage'), code: 'SHOW_OPENED', count: opened}} />
+                <Folder onStateClick={this.props.onStateClick} activeFolder={active} folder={{title: translate('sidebar.folder.closeMessage'), code: 'SHOW_CLOSED', count: closed}} />
             </ul>
         )
     }

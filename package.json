@@ -14,9 +14,20 @@
     "express": "~4.0.0",
     "express-session": "1.11.3",
     "extend": "3.0.0",
+    "gulp-autoprefixer": "^6.0.0",
+    "gulp-csso": "^3.0.1",
+    "gulp-less": "^4.0.1",
+    "i18next": "^14.0.1",
+    "i18next-browser-languagedetector": "^2.2.4",
+    "i18next-express-middleware": "^1.7.1",
+    "i18next-intervalplural-postprocessor": "^1.0.2",
+    "i18next-node-fs-backend": "^2.1.1",
+    "i18next-xhr-backend": "^1.5.1",
     "imap": "0.8.15",
     "jsonwebtoken": "5.0.5",
+    "less": "^3.9.0",
     "mailparser": "0.5.2",
+    "minify-stream": "^1.2.0",
     "moment": "2.10.6",
     "mongodb": "*",
     "mongoose": "~4.0.0",
@@ -26,6 +37,7 @@
     "nodemailer": "1.4.0",
     "react": "0.13.3",
     "react-dropzone": "2.0.1",
+    "react-i18next": "^9.0.10",
     "react-redux": "~2.1.0",
     "react-router": "0.13.3",
     "react-select": "0.6.12",
@@ -37,6 +49,9 @@
     "socketio-jwt": "4.3.1",
     "striptags": "2.0.3",
     "superagent": "*",
+    "terser": "^3.16.1",
+    "uglify-es": "^3.3.9",
+    "uglify-js": "^3.4.9",
     "underscore": "^1.8.3"
   },
   "devDependencies": {
@@ -51,5 +66,10 @@
     "superagent": "^1.4.0",
     "uglifyify": "^3.0.1",
     "vinyl-source-stream": "^1.1.0"
+  },
+  "scripts": {
+    "start": "node app.js",
+    "start-with-debug": "set DEBUG=* && node app.js ",
+    "build-front": "./node_modules/.bin/gulp -- browserify"
   }
 }

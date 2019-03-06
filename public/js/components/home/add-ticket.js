@@ -5,6 +5,7 @@ const request     = require('superagent');
 const {connect}   = require('react-redux');
 const AddForm     = require('./add-ticket/add-form');
 const RootActions = require('../../actions').root;
+const {translate, i18n} = require('../../i18n');
 
 const ESC_KEY = 27;
 
@@ -94,11 +95,10 @@ const AddTicket = React.createClass({
 
         if (res.number) {
             let successText     = this.props.user
-                ? <span>Спасибо за ваше обращение. <br/> Мы уже его получили и работаем!</span>
+                ? translate('addTicket.popup.isUser')
                 : res.user === undefined
-                ? <span>О! Вы уже с нами. <br/> Для того, чтобы отслеживать тикеты — войдите в личный кабинет.</span>
-                :
-                <span>Мы создали вам пароль и отправили его вам на почту,<br/>чтобы вы могли отcлеживать ваш тикет.</span>;
+                ? translate('addTicket.popup.notAuthUser')
+                : translate('addTicket.popup.newUser');
 
             this.setState({fileError: false, isLoading: false, isSuccess: successText});
             this.serverResponse = res;

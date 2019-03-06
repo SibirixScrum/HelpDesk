@@ -35,8 +35,8 @@ exports.projects = [
     {
         code:    'HELPDESK',                  // Project code
         domain:  'localhost:3000',            // Project domain (each project should have it's own domain)
-        name:    'Helpdesk',                  // Project name
-        title:   'This is a test',            // Title for form
+        name:    'projects.helpdesk.name',    // Project name
+        title:   'projects.helpdesk.formTitle',   // Title for form
         letters: 'HD',                        // Short project code, used in ticket numbers
         responsible: 'example@example.com',   // Email of responsible. Auto-creates user account with this email and sends password to it
         email: { // Mail parsing service
@@ -61,7 +61,9 @@ exports.projects = [
                 path: ''
             },*/
         ],
-        filesPos: 'right' // show project files on right or bottom of ticket form
+        filesPos: 'right', // show project files on right or bottom of ticket form
+        footer: true, // bool
+        bodyClass: false // false or string
     }/*
     , {
         code: 'PROJECT2',
@@ -105,4 +107,12 @@ exports.ssl = {
     enabled: false,
     cert: __dirname + '/ssl/server.key',
     key: __dirname + '/ssl/server.crt',
+};
+
+exports.detection = {
+    caches: false, //['cookie']
+    // optional expire and domain for set cookie
+    //cookieExpirationDate: new Date(),
+    //cookieDomain: 'myDomain',
+    //cookieSecure: true // if need secure cookie
 };

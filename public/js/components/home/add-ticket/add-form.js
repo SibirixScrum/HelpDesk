@@ -6,8 +6,9 @@ const Dropzone  = require('react-dropzone');
 const extend    = require('extend');
 const Projects  = require('../../tickets/sidebar/projects');
 const FormMixin = require('../../../mixins/form-mixin');
+const {translate, i18n} = require('../../../i18n');
+const {onDrop} = require('../../file-drop');
 
-const _filesConfig = APP.files;
 const TAB_KEY      = 9;
 
 const AddForm = React.createClass({
@@ -52,28 +53,7 @@ const AddForm = React.createClass({
         });
     },
 
-    onDrop(files) {
-        const newFiles = this.state.files;
-        let filesError = false;
-        files.forEach(function(file) {
-            let ext = file.name.split('.')[file.name.split('.').length - 1];
-
-            if (newFiles.length >= _filesConfig.maxCount) {
-                filesError = 'Пожалуйста, не более ' + _filesConfig.maxCount + ' файлов.';
-            } else if (file.size > _filesConfig.maxSize) {
-                filesError = 'Пожалуйста, файлы не более ' + Math.round(_filesConfig.maxSize / 1000000) + 'Мб.';
-            } else if (_filesConfig.extensions.indexOf(ext) === -1) {
-                let exts   = _filesConfig.extensions.join(', ');
-                filesError = 'Извините, но я понимаю только следующие расширения файлов: ' + exts;
-            } else {
-                newFiles.push(file)
-            }
-        });
-
-        this.setState({files: newFiles, filesError, dragHover: false});
-
-        if (filesError) this.props.showModal({text: filesError});
-    },
+    //onDrop: onDrop.bind(this),
 
     onUploadClick(e) {
         e.preventDefault();
@@ -175,8 +155,9 @@ const AddForm = React.createClass({
     },
 
     render() {
-        const onDeleteFile  = this.onDeleteFile;
+        const onDeleteFile = this.onDeleteFile;
         const onFieldChange = this.onFieldChange;
+        const onDropFile = onDrop;
         const {user} = this.props;
 
         return (
@@ -186,22 +167,22 @@ const AddForm = React.createClass({
                   method="post"
                   encType="multipart/form-data">
 
-                <div className="success-text">{this.props.isSuccess}</div>
+                <div className="success-text" dangerouslySetInnerHTML={{__html: this.props.isSuccess}}/>
 
                 {this.props.isPopup && this.props.projects && Object.keys(this.props.projects).length > 1
                     ? <div className="row">
-                    <Projects noTitle={true}
-                              allowedProjects={this.props.projects}
-                              activeProjects={[this.state.activeProject]}
-                              onToggleProject={this.onToggleProject}
+                        <Projects noTitle={true}
+                                  allowedProjects={this.props.projects}
+                                  activeProjects={[this.state.activeProject]}
+                                  onToggleProject={this.onToggleProject}
                         />
-                </div>
+                    </div>
                     : ''
                 }
 
                 <div className="row">
-                    <label className={'col '+this.getClassName('name')}>
-                        <span>Как к вам обратиться?</span>
+                    <label className={'col ' + this.getClassName('name')}>
+                        <span>{translate('addTicket.form.name.title')}</span>
                         <input
                             disabled={user && user.name ? 'true' : false}
                             onChange={() => onFieldChange('name')}
@@ -209,42 +190,42 @@ const AddForm = React.createClass({
                             ref="name"
                             type="text"
                             value={this.state.form.name}
-                            defaultValue={user&&user.name ? user.name : ''}
+                            defaultValue={user && user.name ? user.name : ''}
                             name="name"
                             onKeyDown={this.focusLast}
-                            />
-                        <span className="error-text">Необходимо указать имя</span>
+                        />
+                        <span className="error-text">{translate('addTicket.form.name.errors.empty')}</span>
                     </label>
                     <label className={'col ' + this.getClassName('email')}>
-                        <span>Email</span>
-                        <input disabled={user&&user.name ? 'true' : false}
+                        <span>{translate('addTicket.form.email.title')}</span>
+                        <input disabled={user && user.name ? 'true' : false}
                                onChange={() => onFieldChange('email')}
                                onKeyUp={() => onFieldChange('email')}
                                ref="email"
                                type="text"
                                value={this.state.form.email}
-                               defaultValue={user&&user.email ? user.email : ''}
+                               defaultValue={user && user.email ? user.email : ''}
                                name="email"/>
-                        <span className="error-text">Необходимо указать валидный Email</span>
+                        <span className="error-text">{translate('addTicket.form.email.errors.empty')}</span>
                     </label>
                 </div>
                 <div className="row">
                     <label className={this.getClassName('title')}>
-                        <span>Тема обращения</span>
+                        <span>{translate('addTicket.form.title.title')}</span>
                         <input onChange={() => onFieldChange('title')}
                                onKeyUp={() => onFieldChange('title')}
                                ref="title"
                                type="text"
                                value={this.state.form.title}
                                name="title"/>
-                        <span className="error-text">Необходимо указать тему</span>
+                        <span className="error-text">{translate('addTicket.form.title.errors.empty')}</span>
                     </label>
                 </div>
                 <div className="row">
                     <label className={this.getClassName('text')}>
-                        <span>Описание проблемы</span>
+                        <span>{translate('addTicket.form.text.title')}</span>
                         <textarea id="text" ref="text" name="text"></textarea>
-                        <span className="error-text">Необходимо описать проблему</span>
+                        <span className="error-text">{translate('addTicket.form.text.errors.empty')}</span>
                     </label>
                 </div>
                 <div className="row">
@@ -253,32 +234,34 @@ const AddForm = React.createClass({
                                name="agreement"
                                value={this.state.form.agreement}
                                onChange={() => onFieldChange('agreement')}
-                               ref="agreement" />
-                        Я согласен на <a href="/agreement/" target="_blank">обработку</a> персональных данных
-                        <span className="error-text">Необходимо дать свое согласие на обработку персональных данных</span>
+                               ref="agreement"/>
+                        <span dangerouslySetInnerHTML={{__html: translate('addTicket.form.agreement.text')}}/>
+                        <span className="error-text">{translate('addTicket.form.agreement.errors.empty')}</span>
                     </label>
                 </div>
                 <div className="row-submit clearfix">
                     <input className={this.props.isLoading ? "btn btn-blue js-send loading" : "btn btn-blue js-send"}
                            type="submit"
-                           onClick={this.props.isSuccess && this.props.closePopup ? this.closePopup : function(){}}
+                           onClick={this.props.isSuccess && this.props.closePopup ? this.closePopup : function () {
+                           }}
                            onKeyDown={this.focusFirst}
                            ref="submit"
-                           value="Отправить"/>
+                           value={translate('addTicket.form.submit.title')}/>
                     {isIE9 ? '' : <Dropzone activeClassName="drag-hover"
                                             className="dropzone-drop"
                                             ref="dropzone"
                                             disableClick={true}
-                                            onDrop={this.onDrop}>
-                                    <label className="file-label">
-                                        <span style={{lineHeight: '36px'}} href="javascript:void(0);" onClick={this.onUploadClick}>Прикрепить файл</span>
-                                        <span className="file-list">
+                                            onDrop={onDropFile.bind(this)}>
+                        <label className="file-label">
+                            <span style={{lineHeight: '36px'}} href="javascript:void(0);"
+                                  onClick={this.onUploadClick}>{translate('addTicket.form.file.title')}</span>
+                            <span className="file-list">
                                             {this.state.files.map((file, i) => {
                                                 return <File onDeleteFile={onDeleteFile} key={i} index={i} file={file}/>
                                             })}
                                         </span>
-                                    </label>
-                                </Dropzone>
+                        </label>
+                    </Dropzone>
                     }
                 </div>
             </form>

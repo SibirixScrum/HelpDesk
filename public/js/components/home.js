@@ -7,6 +7,9 @@ const Login       = require('./home/login');
 const Copyright   = require('./copyright');
 const AddTicket   = require('./home/add-ticket');
 const RootActions = require('../actions').root;
+const LanguageSwitcher = require('./language-switcher');
+
+const {translate, getCurLang, translateWithoutCode, i18n} = require('../i18n');
 
 let docs = '';
 
@@ -27,7 +30,7 @@ if (project && 0 !== project.files.length) {
     className += project.filesPos == 'right' ? ' to-right' : '';
     docs = <div className={className}>
         {project.files.map(function(file, key) {
-            return <a className="doc" key={key} target="_blank" href={file.path}>{file.name}</a>;
+            return <a className="doc" key={key} target="_blank" href={file.path}>{translateWithoutCode(file.name)}</a>;
         })}
     </div>;
 }
@@ -67,6 +70,7 @@ const Home = React.createClass({
         dispatch(RootActions.loginSuccess(response));
         this.transitionTo('tickets');
     },
+
     render() {
         const {user} = this.props;
 
@@ -91,16 +95,21 @@ const Home = React.createClass({
 
         return (
             <div className="wrapper add-ticket-page">
-                <TopLink router={this.context.router}
-                         onClickHandler={this.toggleForms}
-                         isAuth={user.email ? true : false}
-                         isLogin={this.state.isLogin}/>
+                <div className="header-btn-wrapper">
+                    <LanguageSwitcher lng={this.props.lng}
+                                      changeLanguage={this.props.changeLanguage}/>
 
-                <Copyright />
+                    <TopLink router={this.context.router}
+                             onClickHandler={this.toggleForms}
+                             isAuth={user.email ? true : false}
+                             isLogin={this.state.isLogin}/>
+                </div>
 
-                <h1>{project.name}</h1>
+                {project.footer === false ? '' : <Copyright />}
 
-                <h2>{project.title}</h2>
+                <h1>{translateWithoutCode(project.name)}</h1>
+
+                <h2>{translateWithoutCode(project.title)}</h2>
 
                 <div className="form-wrapper">
                     {form}
@@ -121,9 +130,9 @@ const TopLink = React.createClass({
         let text;
 
         if (this.props.isAuth) {
-            text = 'Список тикетов';
+            text = translate('topLink.isAuth');
         } else {
-            text = this.props.isLogin ? 'Добавить тикет' : 'Войти';
+            text = this.props.isLogin ? translate('topLink.isLogin') : translate('topLink.notAuth');
         }
 
         return (
@@ -141,8 +150,16 @@ Home.contextTypes = {
 function select(state) {
     return {
         user: state.root.user,
-        home: state.home
+        home: state.home,
+        lng: state.root.lng
     }
 }
 
-module.exports = connect(select)(Home);
+function dispatchToProps(dispatch) {
+    return {
+        changeLanguage: (lng) => dispatch(RootActions.changeLang(lng)),
+        dispatch
+    }
+}
+
+module.exports = connect(select, dispatchToProps)(Home);

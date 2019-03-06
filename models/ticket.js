@@ -11,6 +11,23 @@ var mailModel = require('./mail');
 var userModel = require('./user');
 var autoIncrement = require('mongoose-auto-increment');
 var fileModel = require('./file');
+let lang = require('../config/locale');
+
+
+let templateString = require('../services/template-string');
+const i18nService = require('../services/i18n');
+let i18nHelper = new i18nService.i18n();
+
+let templateBuilder = templateString;
+
+exports.setI18nHelper = (helper) => {
+    i18nHelper = helper;
+};
+
+exports.setTemplateBuilder = (builder) => {
+    templateBuilder = builder;
+};
+
 
 autoIncrement.initialize(global.mongooseConnection);
 
@@ -160,7 +177,7 @@ exports.addMessageFromMail = function(project, number, mailObject) {
         });
 
         if (mailObject.attachments && mailObject.attachments.length != messageObj.files.length) {
-            messageObj.text += '<br><br>Внимание! Некоторые файлы не прошли валидацию и не будут отображены в сообщении.';
+            messageObj.text += i18nHelper.translator(`${templateBuilder.getStartCode()}.ticket.addMessageFromMail.attachmentsText`);
         }
 
         if (messageObj.author != project.responsible) {
@@ -272,22 +289,54 @@ exports.sendMailOnTicketOpen = sendMailOnTicketOpen;
  *
  * @param project
  * @param ticket
+ * @param user
  */
-function sendMailOnTicketAdd(project, ticket) {
+function sendMailOnTicketAdd(project, ticket, user) {
+    mailModel.setI18nHelper(i18nHelper);
     var ticketNumber = this.compileTicketNumber(project, ticket.number);
-
     var to = project.responsible;
-    var subject = 'Helpdesk создан новый тикет: "' + ticket.title + '" [#' + ticketNumber + ']';
-    var text = 'От кого: ' + ticket.authorName + '<br>\n';
-    text += 'Тема обращения: ' + ticket.title + '<br>\n<br>\n';
-    text += '<p>Сообщение:</p><br>\n<br>\n';
-    text += ticket.messages[0].text;
+
+    var subject = i18nHelper.translator(
+        `${templateBuilder.getStartCode()}.ticket.sendMailOnTicketAdd.subjectForResponsible`,
+        {
+            title: ticket.title,
+            ticketNumber: ticketNumber
+        }
+    );
+
+    var text = i18nHelper.translator(
+        `${templateBuilder.getStartCode()}.ticket.sendMailOnTicketAdd.textForResponsible`,
+        {
+            authorName: ticket.authorName,
+            title: ticket.title,
+            text: ticket.messages[0].text
+        }
+    );
+
     mailModel.sendMail(to, subject, text, true, project, ticket.messages[0].getFilesForMail());
 
+    //change language to user
     to = ticket.author;
-    subject = 'Helpdesk: тикет "' + ticket.title + '"  [#' + ticketNumber + ']';
-    text = 'Добрый день. Вы подавали обращение в систему поддержки проекта ' + project.name + '.<br>\n';
-    text += 'Вы можете отслеживать статус вашего обращения из <a href="http://' + project.domain + '/tickets/' + ticketNumber + '?login=' + encodeURIComponent(to) + '">личного кабинета</a>, либо общаясь в этой цепочке писем (пожалуйста, не удаляйте номер тикета из темы письма при переписке).';
+
+    let userTranslator = i18nHelper.getTranslatorForUser(user);
+
+    subject = userTranslator(
+        `${templateBuilder.getStartCode()}.ticket.sendMailOnTicketAdd.subjectForAuthor`,
+        {
+            title: ticket.title,
+            ticketNumber: ticketNumber
+        }
+    );
+
+    text = userTranslator(
+        `${templateBuilder.getStartCode()}.ticket.sendMailOnTicketAdd.textForAuthor`,
+        {
+            projectName: userTranslator(project.name),
+            link: 'http://' + project.domain + '/tickets/' + ticketNumber + '?login=' + encodeURIComponent(to),
+            text: ticket.messages[0].text
+        }
+    );
+
     mailModel.sendMail(to, subject, text, true, project);
 }
 
@@ -297,17 +346,38 @@ function sendMailOnTicketAdd(project, ticket) {
  * @param ticket
  */
 function sendMailOnTicketClose(project, ticket) {
+    mailModel.setI18nHelper(i18nHelper);
     var ticketNumber = this.compileTicketNumber(project, ticket.number);
 
     var to = project.responsible;
-    var subject = 'Helpdesk тикет "' + ticket.title + '" закрыт: [#' + ticketNumber + ']';
-    var text = 'Тикет "' + ticket.title + '" закрыт.';
+
+    var subject = i18nHelper.translator(
+        `${templateBuilder.getStartCode()}.ticket.sendMailOnTicketClose.subject`,
+        {
+            title: ticket.title,
+            ticketNumber: ticketNumber
+        }
+    );
+
+    var text = i18nHelper.translator(
+        `${templateBuilder.getStartCode()}.ticket.sendMailOnTicketClose.textForResponsible`,
+        {
+            title: ticket.title,
+        }
+    );
+
     mailModel.sendMail(to, subject, text, true, project);
 
     to = ticket.author;
-    subject = 'Helpdesk: тикет "' + ticket.title + '" закрыт [#' + ticketNumber + ']';
-    text = 'Добрый день. Ваше обращение в систему поддержки проекта ' + project.name + ' было закрыто.<br>\n';
-    text += 'Вы можете переоткрыть ваше обращение из <a href="http://' + project.domain + '/tickets/' + ticketNumber + '?login=' + encodeURIComponent(to) + '">личного кабинета</a>.';
+
+    let userTranslator = i18nHelper.getTranslatorForEmail(to);
+    text = userTranslator(`${templateBuilder.getStartCode()}.ticket.sendMailOnTicketClose.textForAuthor`,
+        {
+            projectName: userTranslator(project.name),
+            link: 'http://' + project.domain + '/tickets/' + ticketNumber + '?login=' + encodeURIComponent(to),
+        }
+    );
+
     mailModel.sendMail(to, subject, text, true, project);
 }
 
@@ -317,17 +387,39 @@ function sendMailOnTicketClose(project, ticket) {
  * @param ticket
  */
 function sendMailOnTicketOpen(project, ticket) {
-    var ticketNumber = exports.compileTicketNumber(project, ticket.number);
+    mailModel.setI18nHelper(i18nHelper);
+    var ticketNumber = this.compileTicketNumber(project, ticket.number);
 
     var to = project.responsible;
-    var subject = 'Helpdesk тикет "' + ticket.title + '" переоткрыт: [#' + ticketNumber + ']';
-    var text = 'Тикет "' + ticket.title + '" переоткрыт.';
+
+    var subject = i18nHelper.translator(
+        `${templateBuilder.getStartCode()}.ticket.sendMailOnTicketOpen.subject`,
+        {
+            title: ticket.title,
+            ticketNumber: ticketNumber
+        }
+    );
+
+    var text = i18nHelper.translator(
+        `${templateBuilder.getStartCode()}.ticket.sendMailOnTicketOpen.textForResponsible`,
+        {
+            title: ticket.title,
+        }
+    );
+
     mailModel.sendMail(to, subject, text, true, project);
 
     to = ticket.author;
-    subject = 'Helpdesk: тикет "' + ticket.title + '" переоткрыт [#' + ticketNumber + ']';
-    text = 'Добрый день. Ваше обращение в систему поддержки проекта ' + project.name + ' было переоткрыто.<br>\n';
-    text += 'Вы можете отслеживать статус вашего обращения из <a href="http://' + project.domain + '/tickets/' + ticketNumber + '?login=' + encodeURIComponent(to) + '">личного кабинета</a>, либо общаясь в этой цепочке писем (пожалуйста, не удаляйте номер тикета из темы письма при переписке).';
+
+    let userTranslator = i18nHelper.getTranslatorForEmail(to);
+    text = userTranslator(`${templateBuilder.getStartCode()}.ticket.sendMailOnTicketOpen.textForAuthor`,
+        {
+            projectName: userTranslator(project.name),
+            link: 'http://' + project.domain + '/tickets/' + ticketNumber + '?login=' + encodeURIComponent(to),
+        }
+    );
+    console.log(text);
+
     mailModel.sendMail(to, subject, text, true, project);
 }
 
@@ -335,23 +427,33 @@ function sendMailOnTicketOpen(project, ticket) {
  *
  * @param project
  * @param ticket
+ * @param user
  * @param pass
  */
-function sendMailOnTicketAddUserCreate(project, ticket, pass) {
-    var ticketNumber = project.code + '-' + ticket.number;
-
+function sendMailOnTicketAddUserCreate(project, ticket, user, pass) {
+    mailModel.setI18nHelper(i18nHelper);
+    var ticketNumber = this.compileTicketNumber(project, ticket.number);
     var to = project.responsible;
-    var subject = 'Helpdesk создан новый тикет: "' + ticket.title + '" [#' + ticketNumber + ']';
-    var text = '<p>Сообщение:</p>\n\n';
-    text += ticket.messages[0].text;
+    var subject = i18nHelper.translator(`${templateBuilder.getStartCode()}.ticket.sendMailOnTicketAddUserCreate.subjectForResponsible`, {title: ticket.title, ticketNumber: ticketNumber});
+    var text = i18nHelper.translator(`${templateBuilder.getStartCode()}.ticket.sendMailOnTicketAddUserCreate.textForResponsible`, {text: ticket.messages[0].text});
+
     mailModel.sendMail(to, subject, text, true, project, ticket.messages[0].getFilesForMail());
 
     to = ticket.author;
-    subject = 'Helpdesk: тикет "' + ticket.title + '"  [#' + ticketNumber + ']';
-    text = 'Добрый день. Вы подавали обращение в систему поддержки проекта ' + project.name + '.<br>\n';
-    text += 'Вы можете отслеживать статус вашего обращения из <a href="http://' + project.domain + '/tickets/' + ticketNumber + '?login=' + encodeURIComponent(to) + '">личного кабинета</a>, либо общаясь в этой цепочке писем (пожалуйста, не удаляйте номер тикета из темы письма при переписке).\n';
-    text += 'Логин для доступа: ' + ticket.author + '\n';
-    text += 'Пароль: ' + pass + '\n';
+
+    let userTranslator = i18nHelper.getTranslatorForUser(user);
+
+    subject = userTranslator(`${templateBuilder.getStartCode()}.ticket.sendMailOnTicketAddUserCreate.subjectForAuthor`, {title: ticket.title, ticketNumber: ticketNumber});
+    text = userTranslator(
+        `${templateBuilder.getStartCode()}.ticket.sendMailOnTicketAddUserCreate.textForAuthor`,
+        {
+            projectName: userTranslator(project.name),
+            link: 'http://' + project.domain + '/tickets/' + ticketNumber + '?login=' + encodeURIComponent(to),
+            login: ticket.author,
+            pass: pass
+        }
+    );
+
     mailModel.sendMail(to, subject, text, true, project);
 }
 
@@ -362,18 +464,40 @@ function sendMailOnTicketAddUserCreate(project, ticket, pass) {
  * @param message
  */
 function sendMailOnMessageAdd(project, ticket, message, filesSkiped) {
-    var ticketNumber = exports.compileTicketNumber(project, ticket.number);
+    mailModel.setI18nHelper(i18nHelper);
+    var ticketNumber = this.compileTicketNumber(project, ticket.number);
 
     var to = project.responsible == message.author ? ticket.author : project.responsible;
-    var subject = 'Helpdesk тикет "' + ticket.title + '"  [#' + ticketNumber + ']: новое сообщение';
-    var text = '';
 
-    if (project.responsible != message.author) {
-        text += 'От кого: ' + ticket.authorName + '<br>\n';
+
+    var subject = i18nHelper.translator(
+        `${templateBuilder.getStartCode()}.ticket.sendMailOnMessageAdd.subject`,
+        {
+            title: ticket.title,
+            ticketNumber: ticketNumber
+        }
+    );
+
+    var text = i18nHelper.translator(
+        `${templateBuilder.getStartCode()}.ticket.sendMailOnMessageAdd.textForResponsible`,
+        {
+            title: ticket.title,
+        }
+    );
+
+    let userTranslator = i18nHelper.translator;
+
+    if (project.responsible == message.author) {
+        userTranslator = i18nHelper.getTranslatorForEmail(to);
     }
-    text += 'Тема обращения: ' + ticket.title + '<br>\n<br>\n';
-    text += 'Новое сообщение в тикете:<br>\n<br>\n';
-    text += message.text;
+
+    text = userTranslator(`${templateBuilder.getStartCode()}.ticket.sendMailOnMessageAdd.${project.responsible == message.author ? 'textForAuthor' : 'textForResponsible'}`,
+        {
+            authorName: ticket.authorName,
+            title: ticket.title,
+            text: message.text,
+        }
+    );
 
     mailModel.sendMail(to, subject, text, true, project, message.getFilesForMail());
 }
@@ -385,7 +509,7 @@ function sendMailOnMessageAdd(project, ticket, message, filesSkiped) {
  * @returns {string}
  */
 exports.compileTicketNumber = function(project, ticketNumber) {
-    return project.letters + '-' + ticketNumber;
+    return project.code + '-' + ticketNumber;
 };
 
 /**
@@ -393,7 +517,7 @@ exports.compileTicketNumber = function(project, ticketNumber) {
  * @param ticketList
  * @param callback
  */
-    exports.prepareTicketsForClient = function(ticketList, callback) {
+exports.prepareTicketsForClient = function(ticketList, callback) {
     var userMails = {};
 
     for (var i = 0; i < ticketList.length; i++) {
@@ -418,7 +542,7 @@ exports.compileTicketNumber = function(project, ticketNumber) {
                 var ticket = ticketList[i].toObject({});
                 ticket.author = {
                     email: ticket.author,
-                    name:  userNames[ticket.author]
+                    name:  userNames[ticket.author],
                 };
 
                 for (j = 0; j < ticket.messages.length; j++) {

@@ -1,8 +1,10 @@
 /*** @jsx React.DOM */
 const React = require('react');
 const moment = require('moment');
+const {translate, i18n} = require('../../../../i18n');
 require('moment/locale/ru');
 moment.locale('ru');
+
 
 const Ticket = React.createClass({
     onClickHandler(e) {
@@ -54,7 +56,7 @@ const Ticket = React.createClass({
                 <div className={"time" + (showRedTime ? ' fuckup' : '')}>{lastDateFormatted}</div>
                 <div className="uid">{uid}</div>
                 <div className="name">{ticket.author.name ? ticket.author.name : ticket.author.email}</div>
-                <div className="status">{ticket.opened ? 'Открыт' : 'Закрыт'}</div>
+                <div className="status">{ticket.opened ? translate('tickets.status.open') : translate('tickets.status.close')}</div>
             </div>
         )
     }

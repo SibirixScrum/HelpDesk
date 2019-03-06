@@ -1,0 +1,299 @@
+{
+  "name": "Helpdesk",
+  "title": "Helpdesk",
+  "formTitle": "ЦЕНТР ПОДДЕРЖКИ",
+  "files": {
+    "manual1": "Руководство пользователя"
+  },
+  "user": {
+    "createResponsible": {
+      "name": "Техническая поддержка",
+      "subject": "Helpdesk — новый пароль администратора",
+      "text": "<p>$t(projects.example.user.createResponsible.forProject_interval, {'postProcess': 'interval', 'count': {{projectCount}}}) {{projectNames}} создан новый администратор. Список тикетов доступен <a href={{link}}>по ссылке</a><br>Логин: {{login}}<br>Пароль: {{pass}}</p>",
+      "forProject_interval": "(1){Для проекта};(2-inf){Для проектов}"
+    },
+
+    "sendResetEmail": {
+      "subject": "Helpdesk восстановление пароля",
+      "text": "Добрый день. Вы оставили запрос на смену пароля. Если вы этого не делали, просто проигнорируйте это письмо.<br>\n Чтобы поменять пароль, перейдите по этой <a href={{link}}>ссылке</a>."
+    },
+
+    "resetPassword": {
+      "subject": "Helpdesk ваш пароль был изменен",
+      "text": "Добрый день. </br>\n Ваш пароль был успешно изменен. Новый пароль &mdash; {{pass}}"
+    }
+  },
+  "mail": {
+    "sendMail": {
+      "additionalText": "В ОТВЕТЕ БЫЛИ ПРИКРЕПЛЕНЫ ФАЙЛЫ, ПРОСМОТРЕТЬ ИХ ВЫ СМОЖЕТЕ НА ПОРТАЛЕ HELPDESK",
+      "text": "{{text}} \n\n------------\n {{sing}} \n {{footerText}}",
+      "text_html": "{{text}} <br>\n<br>\n------------<br>\n {{sing}} <br>\n {{footerText}}"
+    },
+
+    "processMailObject": {
+      "subject": "Новый тикет из почты"
+    },
+
+    "endText": "С уважением, \n команда {{projectName}}",
+    "endText_html": "С уважением, <br> команда {{projectName}}"
+  },
+  "ticket": {
+    "addMessageFromMail": {
+      "attachmentsText": "<br><br>Внимание! Некоторые файлы не прошли валидацию и не будут отображены в сообщении."
+    },
+
+    "sendMailOnTicketAdd": {
+      "subjectForResponsible": "Helpdesk создан новый тикет: \"{{title}}\" [#{{ticketNumber}}]",
+      "subjectForAuthor": "Helpdesk: тикет \"{{title}}\" [#{{ticketNumber}}]",
+      "textForResponsible": "От кого: {{authorName}} <br> Тема обращения: {{title}} <br><br> <p>Сообщение:</p><br><br> {{text}}",
+      "textForAuthor": "Добрый день. Вы подавали обращение в систему поддержки проекта {{projectName}}.<br> Вы можете отслеживать статус вашего обращения из <a href={{link}}>личного кабинета</a>, либо общаясь в этой цепочке писем (пожалуйста, не удаляйте номер тикета из темы письма при переписке)."
+    },
+
+    "sendMailOnTicketClose": {
+      "subject": "Helpdesk тикет \"{{title}}\" закрыт: [#{{ticketNumber}}]",
+      "textForResponsible": "Тикет \"{{title}}\" закрыт.",
+      "textForAuthor": "Добрый день. Ваше обращение в систему поддержки проекта {{projectName}} было закрыто.<br> Вы можете переоткрыть ваше обращение из <a href={{link}}>личного кабинета</a>."
+    },
+
+    "sendMailOnTicketOpen": {
+      "subject": "Helpdesk тикет \"{{title}}\" переоткрыт: [#{{ticketNumber}}]",
+      "textForResponsible": "Тикет \"{{title}}\" переоткрыт.",
+      "textForAuthor": "Добрый день. Ваше обращение в систему поддержки проекта {{projectName}} было переоткрыто.<br> Вы можете переоткрыть ваше обращение из <a href={{link}}>личного кабинета</a>, либо общаясь в этой цепочке писем (пожалуйста, не удаляйте номер тикета из темы письма при переписке)."
+    },
+
+    "sendMailOnTicketAddUserCreate": {
+      "subjectForResponsible": "Helpdesk создан новый тикет: \"{{title}}\" [#{{ticketNumber}}]",
+      "subjectForAuthor": "Helpdesk: тикет \"{{title}}\" [#{{ticketNumber}}]",
+      "textForResponsible": "<p>Сообщение:</p> <br><br> {{text}}",
+      "textForAuthor": "Добрый день. Вы подавали обращение в систему поддержки проекта {{projectName}} <br> Вы можете переоткрыть ваше обращение из <a href={{link}}>личного кабинета</a>, либо общаясь в этой цепочке писем (пожалуйста, не удаляйте номер тикета из темы письма при переписке).<br> Логин для доступа: {{login}} <br> Пароль: {{pass}} <br>"
+    },
+
+    "sendMailOnMessageAdd": {
+      "subject": "Helpdesk тикет \"{{title}}\" [#{{ticketNumber}}]: новое сообщение",
+      "textForResponsible": "От кого: {{authorName}}<br> Тема обращения: {{title}}<br><br> Новое сообщение в тикете:<br><br> {{text}}",
+      "textForAuthor": "Тема обращения: {{title}}<br><br> Новое сообщение в тикете:<br><br> {{text}}"
+    }
+  },
+  "front": {
+    "modal": {
+      "header": "Ошибка",
+      "text" : "Что-то пошло не так!",
+      "close": "Закрыть"
+    },
+
+    "topLink": {
+      "isAuth": "Список тикетов",
+      "isLogin": "Добавить тикет",
+      "notAuth": "Войти"
+    },
+
+    "errors": {
+      "email": {
+        "empty": "Необходимо указать валидный Email"
+      },
+      "file": {
+        "length": "Пожалуйста, не более {{count}} $t(projects.example.front.errors.file.lengthFile, {'count': {{count}}}).",
+        "lengthFile_0": "файл",
+        "lengthFile_1": "файла",
+        "lengthFile_2": "файлов",
+        "size": "Пожалуйста, файлы не более {{count}} МБ.",
+        "extension": "Извините, но я понимаю только следующие расширения файлов: {{extension}}"
+      }
+    },
+
+    "login": {
+      "passChanged": {
+        "header": "Восстановление пароля",
+        "text": "Ваш пароль был успешно изменен и выслан вам на почту! Теперь вы можете авторизоваться, используя пароль из письма."
+      },
+
+      "reset": {
+        "header": "Восстановление пароля",
+        "text": "Инструкция по восстановлению пароля отправлена вам на почту!"
+      },
+
+      "form": {
+        "email": {
+          "title": "Email",
+          "errors": {
+            "wrong": "Пользователь не найден",
+            "empty": "$t(projects.example.front.errors.email.empty)"
+          }
+        },
+
+        "password": {
+          "title": "Пароль",
+          "errors": {
+            "wrong": "Неверный пароль",
+            "empty": "Необходимо ввести пароль"
+          }
+        },
+
+        "reset": {
+          "title": "Восстановить пароль"
+        },
+
+        "return": {
+          "title": "Назад к форме входа"
+        },
+
+        "submit": {
+          "title": "Отправить"
+        },
+
+        "submitReset": {
+          "title": "Восстановить"
+        }
+      }
+    },
+
+    "addTicket": {
+      "form": {
+        "name": {
+          "title": "Как к вам обратиться?",
+          "errors": {
+            "empty": "Необходимо указать имя"
+          }
+        },
+
+        "email": {
+          "title": "Email",
+          "errors": {
+            "empty": "$t(projects.example.front.errors.email.empty)"
+          }
+        },
+
+        "title": {
+          "title": "Тема обращения",
+          "errors": {
+            "empty": "Необходимо указать тему"
+          }
+        },
+
+        "text": {
+          "title": "Описание проблемы",
+          "errors": {
+            "empty": "Необходимо описать проблему"
+          }
+        },
+
+        "agreement": {
+          "text": "Я согласен на <a href=\"/agreement/\" target=\"_blank\">обработку</a> персональных данных",
+          "errors": {
+            "empty": "Необходимо дать свое согласие на обработку персональных данных"
+          }
+        },
+
+        "file": {
+          "title": "Прикрепить файл"
+        },
+
+        "submit": {
+          "title": "Отправить"
+        }
+      },
+
+      "popup": {
+        "isUser": "<span>Спасибо за ваше обращение. <br/> Мы уже его получили и работаем!</span>",
+        "notAuthUser": "<span>О! Вы уже с нами. <br/> Для того, чтобы отслеживать тикеты — войдите в личный кабинет.</span>",
+        "newUser": "<span>Мы создали вам пароль и отправили его вам на почту,<br/>чтобы вы могли отcлеживать ваш тикет.</span>"
+
+      }
+    },
+
+    "tickets": {
+      "btnAdd": {
+        "title": "Добавить тикет"
+      },
+      "status": {
+        "open": "Открыт",
+        "close": "Закрыт"
+      },
+
+      "do": {
+        "open": "Открыть тикет",
+        "close": "Закрыть тикет",
+        "addTag": "Добавить тег"
+      },
+
+      "header": {
+        "filter": {
+          "tag": {
+            "title": "Поиск по тегу"
+          },
+
+          "email": {
+            "title": "Поиск по email"
+          }
+        }
+      },
+
+      "sortTypes": {
+        "dateAsc": {
+          "name": "По последнему ответу",
+          "dir": "(новые в начале)"
+        },
+
+        "dateDesc": {
+          "name": "$t(projects.example.front.tickets.sortTypes.dateAsc.name)",
+          "dir": "(старые в начале)"
+        },
+
+        "openedAsc": {
+          "name": "Статусу",
+          "dir": "(закрытые в начале)"
+        },
+
+        "openedDesc": {
+          "name": "$t(projects.example.front.tickets.sortTypes.openedAsc.name)",
+          "dir": "(открытые в начале)"
+        }
+      }
+    },
+
+    "messages": {
+      "file": {
+        "title": "Прикрепленные файлы:"
+      },
+
+      "form": {
+        "answer": {
+          "errors": {
+            "empty": "Необходимо написать ответ"
+          }
+        },
+
+        "submit": {
+          "title": "Отправить",
+          "sub": "или нажмите Ctrl+Enter"
+        },
+
+        "file": {
+          "title": "Прикрепить файл"
+        }
+      }
+    },
+
+    "sidebar": {
+      "group": {
+        "title": "Показывать группы"
+      },
+
+      "folder": {
+        "allMessage": "Все обращения",
+        "openMessage": "Открытые",
+        "closeMessage": "Закрытые"
+      }
+    },
+
+    "copyright": "<a target=\"_blank\" href=\"http://www.sibirix.ru/\"><span class=\"slon\" /></a><span class=\"text\"> — разработка сайта</span>"
+  },
+
+  "projects": {
+    "example": {
+      "name": "exampleApp",
+      "title": "exampleApp"
+    }
+  },
+  "agreement": "agreement"
+}

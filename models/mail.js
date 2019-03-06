@@ -15,6 +15,21 @@ var Imap       = require('imap'),
 
 var timeoutSetted = {};
 
+
+let templateString = require('../services/template-string');
+const i18nService = require('../services/i18n');
+let i18nHelper = new i18nService.i18n();
+
+let templateBuilder = templateString;
+
+exports.setI18nHelper = (helper) => {
+    i18nHelper = helper;
+};
+
+exports.setTemplateBuilder = (builder) => {
+    templateBuilder = builder;
+};
+
 /**
  *
  */
@@ -134,6 +149,8 @@ function startProjectEmailListener(project) {
  * @param attachments
  */
 exports.sendMail = function(to, subject, text, isHtml, project, attachments) {
+    console.log(to, subject, text, isHtml);
+
     var transporter = nodemailer.createTransport({
         host: project.email.smtpHost,
         port: project.email.smtpPort,
@@ -150,10 +167,40 @@ exports.sendMail = function(to, subject, text, isHtml, project, attachments) {
         subject: subject
     };
 
+
     if (isHtml) {
-        mailOptions.html = text + '<br>\n<br>\n------------<br>\n' + project.email.sign;
+        mailOptions.html = i18nHelper.translator(
+            `${templateBuilder.getStartCode()}.mail.sendMail.text`,
+            {
+                context: 'html',
+                text: text,
+                sign: project.email.sign,
+            }
+        );
+
+        mailOptions.html+= i18nHelper.translator(
+            `${templateBuilder.getStartCode()}.mail.endText`,
+            {
+                context: 'html',
+                projectName: i18nHelper.translator(project.name)
+            }
+        );
+
     } else {
-        mailOptions.text = text + '\n\n------------\n' + project.email.sign;
+        mailOptions.text = i18nHelper.translator(
+            `${templateBuilder.getStartCode()}.mail.sendMail.text`,
+            {
+                text: text,
+                sign: project.email.sign,
+            }
+        );
+
+        mailOptions.text+= i18nHelper.translator(
+            `${templateBuilder.getStartCode()}.mail.endText`,
+            {
+                projectName: i18nHelper.translator(project.name)
+            }
+        );
     }
 
     if (attachments && attachments.length) {
@@ -165,12 +212,43 @@ exports.sendMail = function(to, subject, text, isHtml, project, attachments) {
             if (attachments && attachments.length) {
                 console.log('Message dont send, try to exclude attachments', error);
 
-                var addText = 'В ОТВЕТЕ БЫЛИ ПРИКРЕПЛЕНЫ ФАЙЛЫ, ПРОСМОТРЕТЬ ИХ ВЫ СМОЖЕТЕ НА ПОРТАЛЕ HELPDESK';
+                var addText = i18nHelper.translator(`${templateBuilder.getStartCode()}.mail.sendMail.additionalText`);
                 if (isHtml) {
-                    text += '<br>\n<br>\n------------<br>\n ' + addText;
+                    text = i18nHelper.translator(
+                        `${templateBuilder.getStartCode()}.mail.sendMail.text`,
+                        {
+                            context: 'html',
+                            text: text,
+                            sign: addText,
+                        }
+                    );
+
+                    text+= i18nHelper.translator(
+                        `${templateBuilder.getStartCode()}.mail.endText`,
+                        {
+                            context: 'html',
+                            projectName: i18nHelper.translator(project.name)
+                        }
+                    );
+
+
                     mailOptions.html = text;
                 } else {
-                    text += '\n\n------------\n' + addText;
+                    text = i18nHelper.translator(
+                        `${templateBuilder.getStartCode()}.mail.sendMail.text`,
+                        {
+                            text: text,
+                            sign: addText,
+                        }
+                    );
+
+                    text+= i18nHelper.translator(
+                        `${templateBuilder.getStartCode()}.mail.endText`,
+                        {
+                            projectName: i18nHelper.translator(project.name)
+                        }
+                    );
+
                     mailOptions.text = text;
                 }
 
@@ -307,6 +385,8 @@ function processMailObject(mailObject) {
 
         if (!project) return;
 
+        let userTranslator = i18nHelper.getTranslatorForEmail()
+
         // new ticket creation
         var author = mailObject.from[0];
         var email  = author.address;
@@ -388,3 +468,4 @@ function processMailObject(mailObject) {
         });
     }
 }
+

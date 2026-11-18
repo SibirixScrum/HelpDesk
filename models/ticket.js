@@ -145,7 +145,7 @@ exports.addMessageFromMail = function(project, number, mailObject) {
         } else {
             text = mailObject.text.replace(/\r?\n/g, '<br>');
         }
-        text = striptags(text, global.config.tickets.editor.allowedTags);
+        text = striptags(text, global.config.tickets.editor.allowedTags).replace(/\son[a-z]+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, '');
 
         var authorEmail = author.address.toLowerCase();
         if (authorEmail === ticket.author.toLowerCase()) {

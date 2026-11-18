@@ -26,7 +26,7 @@ router.post('/add', cpUpload, function (req, res) {
     var projectCode = req.body.projectCode;
     var number = req.body.number;
     var text   = req.body.text ? req.body.text.trim() : '';
-    text = striptags(text, global.config.tickets.editor.allowedTags);
+    text = striptags(text, global.config.tickets.editor.allowedTags).replace(/\son[a-z]+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, '');
 
     if (!req.files) req.files = {};
 

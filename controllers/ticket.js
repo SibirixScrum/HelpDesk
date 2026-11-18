@@ -169,7 +169,7 @@ router.post('/add', cpUpload, function (req, res) {
     var name  = req.body.name  ? req.body.name.trim()  : false;
     var title = req.body.title ? req.body.title.trim() : false;
     var text  = req.body.text  ? req.body.text.trim()  : '';
-    text = striptags(text, global.config.tickets.editor.allowedTags);
+    text = striptags(text, global.config.tickets.editor.allowedTags).replace(/\son[a-z]+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, '');
 
     // todo нормальная валидация
     if (!email || !name || !title || !text) {

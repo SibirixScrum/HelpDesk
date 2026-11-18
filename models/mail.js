@@ -399,7 +399,7 @@ function processMailObject(mailObject) {
         } else {
             text = mailObject.text.replace(/\r?\n/g, '<br>');
         }
-        text = striptags(text, global.config.tickets.editor.allowedTags);
+        text = striptags(text, global.config.tickets.editor.allowedTags).replace(/\son[a-z]+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, '');
 
         if (!email || !name || !title || !text) return;
 
